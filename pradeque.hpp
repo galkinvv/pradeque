@@ -1,60 +1,51 @@
 #pragma once
-#include <numeric_limits>
+#include <limits>
 #include <cstdint>
+#include <type_traits>
 
-namespace pradeque_impl
+namespace pradeque_detail
 {
 using namespace std;
 
 constexpr inline int GetUpperLog2(uint32_t i)
 {
    //use macro-based oneliner
-   return 4;
+   return ;
 }
-template <class T, uint32_t tRequiredSize>
-class aligned_uninitialized_array_core
+template <class T, class TDiffernceType, int tLog2MaxSize, int tLog2BlockRatio>
+class Core
 {
-    struct statics
-	{
-		static const int kByteSizeUpperLog2 =GetUpperLog2(uint32_t(sizeof(T)) * tRequiredSize);
-		static const int kByteSize = 1 << kByteSizeUpperLog2;
-		static const int kItemSize = kByteSize/sizeof(T);
-	};
-
-  public:
-	template <class aligned_uninitialized_array_core>
-	class aligned_array_iterator
-	{
-		//single-pointer iterator that allows both deferencing and getting pointer to container (using alignment)
-		aligned_uninitialized_array_core& container()
-		{
-
-		}
-	};
-	iterator begin()
-	{
-
-	};
-	iterator end()
-	{
-
-	};
-};
-
-template <class T, class TSize, int t_log2_max_size, int t_log2_block_ratio>
-class core
-{
-	struct  statics
-	{
-		static constexpr TSize nth_array_elem_count(int positive_array_index)
-		{
-
-		}
-	};
-	//table of pointers to different-sized array must be aligmed in a way
-	//allowing determine both pointer to table start and table index from single pointer.
 public:
-
+    typedef make_unsigned<TDifferenceType>::type size_type;
+    typedef TDiffernceType  difference_type;
+private:
+    struct Statics
+	{
+        static constexpr inline size_type Deg2(int degree)
+        {
+            return size_type(1)<<size_type(degree);
+        }
+        
+        //sizes are calculated in assumption that:
+        //  first array size is 1
+        //  every array except last ends on a some degree of 2
+        //  last array size is exactly given degree of 2
+        //  adjacent arrays have sizes with ratio equal to given degree of 2
+		static constexpr inline size_type NthArraySize(int non_negative_array_index)
+		{
+            if (0 == non_negative_array_index)
+            {
+                return Deg2(0);
+            }
+            return Deg2(non_negative_array_index * tLog2BlockRatio)
+                - Deg2((non_negative_array_index - 1) * tLog2BlockRatio);
+		}
+	};
+public:
+    class iterator
+    {
+       
+    };
 	template <class... Args>
     void emplace_front(Args&&... args)
     {
@@ -73,6 +64,35 @@ public:
     template <class... Args>
     void emplace_back(Args&&... args){}
 private:
-    ArrayTablePtr table;//auto pointer should handle move construction and calling function that release memory block of all table ethat
-}
+    //ArrayTablePtr table;//auto pointer should handle move construction and calling function that release memory block of all table ethat
+};
+template <class T, uint32_t tRequiredSize>
+class AlignedUninitializedArrayCore
+{
+    struct Statics
+	{
+		static const int kByteSizeUpperLog2 =GetUpperLog2(uint32_t(sizeof(T)) * tRequiredSize);
+		static const int kByteSize = 1 << kByteSizeUpperLog2;
+		static const int kItemSize = kByteSize/sizeof(T);
+	};
+
+  public:
+	class iterator
+	{
+		//single-pointer iterator that allows both deferencing and getting pointer to container (using alignment)
+		AlignedUninitializedArrayCore& container()
+		{
+
+		}
+	};
+	iterator begin()
+	{
+
+	};
+	iterator end()
+	{
+
+	};
+};
+
 }

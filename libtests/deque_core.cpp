@@ -13,7 +13,7 @@ struct S
     S(S&&) = delete;
 };
 
-typedef pradeque_impl::core<S, int64_t, 62> Core;
+typedef pradeque_detail::Core<S, uint64_t, 62, 5> Core;
 
 TEST(deque_core, api)
 {

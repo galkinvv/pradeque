@@ -1,26 +1,37 @@
 #pragma once
 #include <limits>
 #include <cstdint>
-#include <type_traits>
 
 namespace pradeque_detail
 {
 using namespace std;
 
-constexpr inline int GetUpperLog2(uint32_t i)
+constexpr inline int GetLowerLog2(uint32_t i)
 {
    //use macro-based oneliner
    return ;
 }
-template <class T, class TDiffernceType, int tLog2MaxSize, int tLog2BlockRatio>
+template <class T, class TSizeType, int tLog2MaxSize, int tLog2BlockRatio>
 class Core
 {
 public:
-    typedef make_unsigned<TDifferenceType>::type size_type;
-    typedef TDiffernceType  difference_type;
+    typedef TSizeType size_type;
+    typedef TSizeType difference_type;
 private:
     struct Statics
 	{
+        // get array index by lower log2 of element index
+        // never returns 
+        static constexpr inline int ArrayIndex(int log2elemnent_index)
+        {
+            return 1 + (log2elemnent_index/tLog2BlockRatio);
+        }
+
+        static constexpr inline int ArraysCount()
+        {
+            return 1 + ArrayIndex(tLog2MaxSize);
+        }
+
         static constexpr inline size_type Deg2(int degree)
         {
             return size_type(1)<<size_type(degree);
@@ -28,17 +39,23 @@ private:
         
         //sizes are calculated in assumption that:
         //  first array size is 1
-        //  every array except last ends on a some degree of 2
-        //  last array size is exactly given degree of 2
-        //  adjacent arrays have sizes with ratio equal to given degree of 2
+        //    - this is for simplicity and efficient handling of case where it is pointer to first fixed-sized array
+        //  every array except last ends in a way that sum of it's and previous array sizes is a some degree of 2
+        //    - this is required to simplified determination of specific array from global index
+        //  last array size is exactly 2**tLog2MaxSize 
+        //    - this is required to correctly handle queue wraparound with max_size elements
+        //  adjacent arrays have sizes with ratio near to 2**tLog2BlockRatio
+        //    - this is required to control memory usage
 		static constexpr inline size_type NthArraySize(int non_negative_array_index)
 		{
-            if (0 == non_negative_array_index)
-            {
-                return Deg2(0);
-            }
-            return Deg2(non_negative_array_index * tLog2BlockRatio)
-                - Deg2((non_negative_array_index - 1) * tLog2BlockRatio);
+            return (ArraysCount() == (1 + non_negative_array_index)) ?
+                Deg2(tLog2MaxSize):
+                (Deg2(non_negative_array_index * tLog2BlockRatio) - (
+                    (0 == non_negative_array_index) ?
+                    size_type(0):
+                    Deg2((non_negative_array_index - 1) * tLog2BlockRatio)
+                )
+            ;
 		}
 	};
 public:

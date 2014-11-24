@@ -11,25 +11,26 @@ constexpr inline int GetLowerLog2(uint32_t i)
    //use macro-based oneliner
    return ;
 }
-template <class T, class TSizeType, int tLog2MaxSize, int tLog2BlockRatio>
+template <class T, class TDifferenceType, int tLog2MaxSize, int tLog2BlockRatio>
 class Core
 {
 public:
-    typedef TSizeType size_type;
-    typedef TSizeType difference_type;
+    typedef typename std::make_unsigned<TDifferenceType>::type size_type;
+    typedef TDifferenceType difference_type;
 private:
     struct Statics
 	{
         // get array index by lower log2 of element index
-        // never returns 
+        // can't be applied to element with index zero, so never returns 0
         static constexpr inline int ArrayIndex(int log2elemnent_index)
         {
             return 1 + (log2elemnent_index/tLog2BlockRatio);
         }
 
-        static constexpr inline int ArraysCount()
+        static constexpr inline int LastArray()
         {
-            return 1 + ArrayIndex(tLog2MaxSize);
+            // array containing elements with pre-max lower log2 is extended to contain max_size elements
+            return ArrayIndex(tLog2MaxSize - 1);
         }
 
         static constexpr inline size_type Deg2(int degree)
@@ -48,7 +49,7 @@ private:
         //    - this is required to control memory usage
 		static constexpr inline size_type NthArraySize(int non_negative_array_index)
 		{
-            return (ArraysCount() == (1 + non_negative_array_index)) ?
+            return (LastArray() == non_negative_array_index) ?
                 Deg2(tLog2MaxSize):
                 (Deg2(non_negative_array_index * tLog2BlockRatio) - (
                     (0 == non_negative_array_index) ?

@@ -26,5 +26,24 @@ Provide a container that would be like a std::vector suitable as "default contai
  * for known to be small internal arrays retrieve pointer to array from pointer to specific element
  * for big arrays this achieves aligment requirement for bounds 
 * possibly use small-size optimization: for initial elements allocate single array aligned 2 times more than typical block and just store two pointers to begin-end elements in it. This allows even efficient rotating for small queue usage pattern.
- * after expanding to table reuse this pointers for pointer to table (other null or some very useful information).
-* analyze fbvector optimizations and try to aply them
+ * after expanding to table reuse first of them for pointer to table (other can be null or carry some other useful information).
+* the iterator should contain all information that is required to perform iteration in same block with very rare acesses to table. Example iterator: pointer to element, pointer to table element which lower bits encodes lower limit of container size.
+* the object itself should contain all information to perform all front/back related operations that does't require memory alloc/free without acessing the table.
+* analyze fbvector optimizations and try to apply them
+ * fbvector: allocation sizes that can be reused durin grow.
+   * pradeque: in queue scenario of usage sum of all smaller blocks sizes are a bit smaller than the bigger block
+ * fbvector: opt-in to allow copying via memcpy
+   * pradeque: doesn't require copy constructor for operations not involving elements in the middle.
+* tradeoffs: for first version tradeoffs may be made assuming system with large virtual address space and for which address computations are a lot faster than memory access.
+
+### Use case analysis
+
+* vector allows random acess by index, which is very fast.
+ * Given index and reference to vector it requires one memory access to vector instance and dependent access to vector data at calculated address.
+ * index is the only way to stably identify element in a vector, because vector iterators are not stable.
+ * pradeque can use another approach to this. It's random access by index nearly always requires one more indirect memory lookup operation, that's bad.
+But (index, reference to pradeque) pair shouldn't be used in this use case of pradeque, iterator should be used.
+It would allow very fast (direct address) access to element, random access to elements in same block without extra lookup (better than vector),
+And random access to element in another block with single extra lookup into table (like vector).
+There would be a bit more address calculations but they expected to be trivial.
+

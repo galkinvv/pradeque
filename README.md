@@ -27,13 +27,15 @@ Provide a container that would be like a std::vector suitable as "default contai
  * for big arrays this achieves aligment requirement for bounds 
 * possibly use small-size optimization: for initial elements allocate single array aligned 2 times more than typical block and just store two pointers to begin-end elements in it. This allows even efficient rotating for small queue usage pattern.
  * after expanding to table reuse first of them for pointer to table (other can be null or carry some other useful information).
-* the iterator should contain all information that is required to perform iteration in same block with very rare acesses to table. Example iterator: pointer to element, pointer to table element which lower bits encodes lower limit of container size.
+* the iterator should contain all information that is required to perform iteration in same block with very rare acesses to table. Example iterator: pointer to element, pointer to table element which lower bits encodes at least lower limit of container size.
 * the object itself should contain all information to perform all front/back related operations that does't require memory alloc/free without acessing the table.
 * analyze fbvector optimizations and try to apply them
  * fbvector: allocation sizes that can be reused durin grow.
-   * pradeque: in queue scenario of usage sum of all smaller blocks sizes are a bit smaller than the bigger block
+  * pradeque: in queue scenario of usage sum of all smaller blocks sizes are a bit smaller than the bigger block
  * fbvector: opt-in to allow copying via memcpy
-   * pradeque: doesn't require copy constructor for operations not involving elements in the middle.
+  * pradeque: doesn't require copy constructor for operations not involving elements in the middle.
+ * fbvector: autodetect and use jemalloc
+  * pradeque: optimize performance for jemalloc case; split out allocator api alllowing using non-standard allocator with extra options to free
 * tradeoffs: for first version tradeoffs may be made assuming system with large virtual address space and for which address computations are a lot faster than memory access.
 
 ### Use case analysis

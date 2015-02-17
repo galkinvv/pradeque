@@ -18,8 +18,8 @@ Provide a container that would be like a std::vector suitable as "default contai
 * basic structure: use table with arrays of exponential increasing size.
 * implement infinite-queue-pattern usage by relocating same size arrays from the end of container to the beginng of container
  * relocation can be done iff elements fits in a few arrays of same size
-  * more arrays of same size allows optimized memory usage - no need to fill entire big array to relocate
-  * for optized memory usage size of next array should be not a lot greater than sum of sizes of all previous arrays
+  * more arrays of same size allows optimized memory usage - no need to allocate entire big array to relocate data that use small portion of it
+  * for optimized memory usage size of next array should be not a lot greater than sum of sizes of all previous arrays
  * relocation of a few arrays can be efficiently done by storing array pointers in circular buffer and rolling it via base pointer
 * optimize iteartor inc/dec operations by requiring that all ends of data blocks correspond to adresses with specific alignment, so most increment operations would just add constant to pointer and checks that such addition does't cross bound
 * use aligned arrays allocation
@@ -49,3 +49,9 @@ It would allow very fast (direct address) access to element, random access to el
 And random access to element in another block with single extra lookup into table (like vector).
 There would be a bit more address calculations but they expected to be trivial.
 
+### External API
+* C header declaring functions that gets extra argument with structure. Gives possibilyty to integrate into core of other projects.
+* C++11 header with high stdlib compatibility
+* common code
+ * so C++ version have to be wrapper around C passing const structure of parameters generated from template arguments
+auto-generating wrapping extra parameter  

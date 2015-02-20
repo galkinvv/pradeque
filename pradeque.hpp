@@ -7,7 +7,7 @@ namespace pradeque_detail
 {
 using namespace std;
 
-constexpr inline int GetLowerLog2(uint32_t i)
+constexpr inline int GetUpperLog2(uint32_t i)
 {
    //use macro-based oneliner
    return ;

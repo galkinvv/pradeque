@@ -2,15 +2,16 @@
 #include "pradeque.h"
 #include <limits>
 #include <cstdint>
+#include <type_traits>
 
 namespace pradeque_detail
 {
 using namespace std;
 
-constexpr inline int GetUpperLog2(uint32_t i)
+constexpr inline int GetLowerLog2(uint32_t i)
 {
    //use macro-based oneliner
-   return ;
+   return 0;//PRA_DEQUE_LOWER_LOG2_UINT32(i);
 }
 template <class T, class TDifferenceType, int tLog2MaxSize, int tLog2BlockRatio>
 class Core
@@ -56,7 +57,7 @@ private:
                     (0 == non_negative_array_index) ?
                     size_type(0):
                     Deg2((non_negative_array_index - 1) * tLog2BlockRatio)
-                )
+                ))
             ;
 		}
 	};
@@ -90,7 +91,7 @@ class AlignedUninitializedArrayCore
 {
     struct Statics
 	{
-		static const int kByteSizeUpperLog2 =GetUpperLog2(uint32_t(sizeof(T)) * tRequiredSize);
+		static const int kByteSizeUpperLog2 =GetLowerLog2(uint32_t(sizeof(T)) * tRequiredSize);
 		static const int kByteSize = 1 << kByteSizeUpperLog2;
 		static const int kItemSize = kByteSize/sizeof(T);
 	};

@@ -8,10 +8,9 @@ namespace pradeque_detail
 {
 using namespace std;
 
-constexpr inline int GetLowerLog2(uint32_t i)
+constexpr inline int LowerLog2(uint32_t i)
 {
-   //use macro-based oneliner
-   return 0;//PRA_DEQUE_LOWER_LOG2_UINT32(i);
+   return PRA_DEQUE_LOWER_LOG2_UINT32(i);
 }
 template <class T, class TDifferenceType, int tLog2MaxSize, int tLog2BlockRatio>
 class Core
@@ -91,7 +90,7 @@ class AlignedUninitializedArrayCore
 {
     struct Statics
 	{
-		static const int kByteSizeUpperLog2 =GetLowerLog2(uint32_t(sizeof(T)) * tRequiredSize);
+		static const int kByteSizeUpperLog2 = LowerLog2(uint32_t(sizeof(T)) * tRequiredSize);
 		static const int kByteSize = 1 << kByteSizeUpperLog2;
 		static const int kItemSize = kByteSize/sizeof(T);
 	};

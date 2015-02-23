@@ -1,8 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdio.h>
-
+#include <assert.h>
 
 #define PRA_DEQUE_EMPTY
 #define PRA_DEQUE_DEFER(id) id PRA_DEQUE_EMPTY
@@ -20,7 +19,32 @@
 #define PRA_DEQUE_LOWER_LOG2_UINT32(x) (PRA_DEQUE_EXPAND(PRA_DEQUE_EXPAND(PRA_DEQUE_EXPAND(PRA_DEQUE_EXPAND(PRA_DEQUE_LOWER_LOG2_UINT_HELPER32(((uint32_t)(x))))))))
 #define PRA_DEQUE_LOWER_LOG2_UINT64(x) (PRA_DEQUE_EXPAND(PRA_DEQUE_EXPAND(PRA_DEQUE_EXPAND(PRA_DEQUE_EXPAND(PRA_DEQUE_EXPAND(PRA_DEQUE_LOWER_LOG2_UINT_HELPER64(((uint64_t)(x)))))))))
 
-static const int kPraDequePPVoidExtraBits = PRA_DEQUE_LOWER_LOG2_UINT64(sizeof(uintptr_t));
+static inline int praDequePointerExtraBits(size_t extra_max_value)
+{
+    return PRA_DEQUE_LOWER_LOG2_UINT64(extra_max_value);
+}
+
+static inline uintptr_t praDequePointerExtraMask(size_t extra_max_value)
+{
+    return ~((~(uintptr_t)0) << praDequePointerExtraBits(extra_max_value));
+}
+
+static inline uintptr_t praDequePackedGetMain(uintptr_t packed, size_t extra_max_value)
+{
+    return (packed_pointer & ~praDequePointerExtraMask(extra_max_value));
+}
+
+static inline uintptr_t praDequePackedGetExtra(uintptr_t packed, size_t extra_max_value)
+{
+    return packed_pointer & praDequePointerExtraMask(extra_max_value);
+}
+
+static inline uintptr_t praDequePacked(uintptr_t main, uintptr_t extra, size_t extra_max_value)
+{
+    assert(extra <= praDequePointerExtraMask(extra_max_value);
+    assert(!(main & praDequePointerExtraMask(extra_max_value));
+    return main | extra;
+}
 
 typedef struct{
     uintptr_t ppvoid_useful_bits:(CHAR_BIT*sizeof(uintptr_t)) - kPraDequePPVoidExtraBits; 

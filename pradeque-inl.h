@@ -19,56 +19,33 @@
 #define PRA_DEQUE_LOWER_LOG2_UINT32(x) (PRA_DEQUE_EXPAND(PRA_DEQUE_EXPAND(PRA_DEQUE_EXPAND(PRA_DEQUE_EXPAND(PRA_DEQUE_LOWER_LOG2_UINT_HELPER32(((uint32_t)(x))))))))
 #define PRA_DEQUE_LOWER_LOG2_UINT64(x) (PRA_DEQUE_EXPAND(PRA_DEQUE_EXPAND(PRA_DEQUE_EXPAND(PRA_DEQUE_EXPAND(PRA_DEQUE_EXPAND(PRA_DEQUE_LOWER_LOG2_UINT_HELPER64(((uint64_t)(x)))))))))
 
-static inline int praDequePointerExtraBits(size_t extra_max_value)
+static inline int praDequePackedExtraBits(size_t extra_value_range_size)
 {
-    return PRA_DEQUE_LOWER_LOG2_UINT64(extra_max_value);
+    return PRA_DEQUE_LOWER_LOG2_UINT64(extra_value_range_size);
 }
 
-static inline uintptr_t praDequePointerExtraMask(size_t extra_max_value)
+static inline uintptr_t praDequePackedExtraMask(size_t extra_value_range_size)
 {
-    return ~((~(uintptr_t)0) << praDequePointerExtraBits(extra_max_value));
+    assert(extra_value_range_size);
+    uintptr_t extra_mask = extra_value_range_size - 1;
+    assert(!(extra_value_range_size & extra_mask));//ensures that size is a power of 2
+    return extra_mask;
 }
 
-static inline uintptr_t praDequePackedGetMain(uintptr_t packed, size_t extra_max_value)
+static inline uintptr_t praDequePackedGetMainShifted(uintptr_t packed, size_t extra_value_range_size)
 {
-    return (packed_pointer & ~praDequePointerExtraMask(extra_max_value));
+    return (packed & ~praDequePackedExtraMask(extra_value_range_size));
 }
 
-static inline uintptr_t praDequePackedGetExtra(uintptr_t packed, size_t extra_max_value)
+static inline uintptr_t praDequePackedGetExtra(uintptr_t packed, size_t extra_value_range_size)
 {
-    return packed_pointer & praDequePointerExtraMask(extra_max_value);
+    return packed & praDequePackedExtraMask(extra_value_range_size);
 }
 
-static inline uintptr_t praDequePacked(uintptr_t main, uintptr_t extra, size_t extra_max_value)
+static inline uintptr_t praDequePacked(uintptr_t main_shifted, uintptr_t extra, size_t extra_value_range_size)
 {
-    assert(extra <= praDequePointerExtraMask(extra_max_value);
-    assert(!(main & praDequePointerExtraMask(extra_max_value));
-    return main | extra;
+    assert(extra <= praDequePackedExtraMask(extra_value_range_size);
+    assert(!(main_shifted & praDequePackedExtraMask(extra_value_range_size));
+    return main_shifted | extra;
 }
 
-typedef struct{
-    uintptr_t ppvoid_useful_bits:(CHAR_BIT*sizeof(uintptr_t)) - kPraDequePPVoidExtraBits; 
-    uint8_t extra:kPraDequePPVoidExtraBits;
-}
-pradeque_ppvoid_with_extra;
-
-typedef struct
-{
-    void* value;
-    pradeque_ppvoid_with_extra entry_align_at_least;//pointer to table entry with extra data set to lower estimation of additional alignment bits to alignment of smallest block
-}
-pradeque_iterator_t;
-
-typedef struct
-{
-   ppradeque_ppvoid_with_extra first_entry_with_high_bits_of_second_entry;  
-   void *first;
-   void *post_last;
-}
-pradeque_t;
-
-typedef struct
-{
-    size_t value_size;
-}
-pradeque_params_t;

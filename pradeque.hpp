@@ -8,10 +8,6 @@ namespace pradeque_detail
 {
 using namespace std;
 
-constexpr inline int LowerLog2(uint32_t i)
-{
-   return PRA_DEQUE_LOWER_LOG2_UINT32(i);
-}
 template <class T, class TDifferenceType, int tLog2MaxSize, int tLog2BlockRatio>
 class Core
 {
@@ -84,34 +80,6 @@ public:
     void emplace_back(Args&&... args){}
 private:
     //ArrayTablePtr table;//auto pointer should handle move construction and calling function that release memory block of all table ethat
-};
-template <class T, uint32_t tRequiredSize>
-class AlignedUninitializedArrayCore
-{
-    struct Statics
-	{
-		static const int kByteSizeUpperLog2 = LowerLog2(uint32_t(sizeof(T)) * tRequiredSize);
-		static const int kByteSize = 1 << kByteSizeUpperLog2;
-		static const int kItemSize = kByteSize/sizeof(T);
-	};
-
-  public:
-	class iterator
-	{
-		//single-pointer iterator that allows both deferencing and getting pointer to container (using alignment)
-		AlignedUninitializedArrayCore& container()
-		{
-
-		}
-	};
-	iterator begin()
-	{
-
-	};
-	iterator end()
-	{
-
-	};
 };
 
 }

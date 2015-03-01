@@ -19,6 +19,7 @@ typedef pradeque_detail::Core<S, uint64_t, 62, 5> Core;
 TEST(deque_core, cpp_api)
 {
     S s{""};
+	pradeque_release(0, 0);
 }
 
 extern "C" int count_errors_in_pradeque_plain_c_api();

@@ -53,3 +53,10 @@ static inline int praDequeDetail_LowerLog2(uint32_t i)
 {
    return PRA_DEQUE_DETAIL_LOWER_LOG2_UINT32(i);
 }
+
+#ifndef PRA_DEQUE_DETAIL_API
+#define PRA_DEQUE_DETAIL_API inline
+#endif
+
+PRA_DEQUE_DETAIL_API
+void pradeque_release(pradeque_t* deque, pradeque_params_t* params){}

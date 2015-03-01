@@ -14,10 +14,13 @@ ifndef BUILDDIR
 endif
 
 GCC_WARNINGS=-Wall -Wextra -Wuninitialized -W -Wparentheses -Wformat=2 -Wswitch-default -Wcast-align -Wpointer-arith -Wwrite-strings -Wstrict-aliasing=2
-GCC_WARNINGS_OFF=-Wno-missing-field-initializers -Wno-format-nonliteral -Wno-unknown-pragmas -Wno-reorder
-ALL_CXX_LANG_FLAGS=$(GCC_WARNINGS_OFF) $(GCC_WARNINGS) -std=c++11
+GCC_WARNINGS_OFF=-Wno-missing-field-initializers -Wno-format-nonliteral -Wno-unknown-pragmas
+GXX_WARNINGS_OFF=-Wno-reorder
 
-CXXFLAGS = $(ALL_CXX_LANG_FLAGS) -O$(OPTIMIZE) -g -march=native -mtune=native -MD -MP -ffunction-sections -fdata-sections
+CFLAGS = $(GCC_WARNINGS_OFF) $(GCC_WARNINGS) -g -march=native -mtune=native -MD -MP -ffunction-sections -fdata-sections
+ALL_CXX_LANG_FLAGS=$(CFLAGS) $(GXX_WARNINGS_OFF) -std=c++11
+
+CXXFLAGS = $(ALL_CXX_LANG_FLAGS) -O$(OPTIMIZE)
 #CXXFLAGS = -g -pg -O3 -march=native -mtune=native
 
 LDFLAGS = -O$(OPTIMIZE) -g 
@@ -42,7 +45,8 @@ TMPDIR=$(BUILDDIR)/tmp
 all: $(BUILDDIR)/run-gt$(BINEXT)
 
 TEST_SOURCES=$(wildcard libtests/*.cpp)
-TEST_OBJECTS = $(TEST_SOURCES:libtests/%.cpp=$(OBJDIR)/libtests/%.o) $(OBJDIR)/libtests/gtest-all.o $(OBJDIR)/libtests/gtest_main.o 
+TEST_SOURCES_С=$(wildcard libtests/*.c)
+TEST_OBJECTS = $(TEST_SOURCES_С:libtests/%.c=$(OBJDIR)/libtests_с/%.o) $(TEST_SOURCES:libtests/%.cpp=$(OBJDIR)/libtests/%.o) $(OBJDIR)/libtests/gtest-all.o $(OBJDIR)/libtests/gtest_main.o
 
 $(BUILDDIR)/run-gt$(BINEXT): $(TEST_OBJECTS) 
 	$(LD) -pthread $^ -L $(OBJDIR) -o $@ $(LDFLAGS)
@@ -50,6 +54,10 @@ $(BUILDDIR)/run-gt$(BINEXT): $(TEST_OBJECTS)
 $(OBJDIR)/libtests/%.o: libtests/%.cpp 3rd/gtest/src/gtest-all.cc
 	mkdir -p $(dir $@)
 	$(CXX11) $(CXXFLAGS) -I . -I 3rd/gtest -I 3rd/gtest/include -c $< -o $@
+
+$(OBJDIR)/libtests_с/%.o: libtests/%.c
+	mkdir -p $(dir $@)
+	$(CC_FORCXX) $(CFLAGS) -I . -c $< -o $@
 
 $(OBJDIR)/libtests/gtest-all.o: 3rd/gtest/src/gtest-all.cc
 	mkdir -p $(dir $@)

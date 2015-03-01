@@ -16,9 +16,15 @@ struct S
 
 typedef pradeque_detail::Core<S, uint64_t, 62, 5> Core;
 
-TEST(deque_core, api)
+TEST(deque_core, cpp_api)
 {
     S s{""};
+}
+
+extern "C" int count_errors_in_pradeque_plain_c_api();
+TEST(deque_core, plain_c_api)
+{
+    EXPECT_EQ(count_errors_in_pradeque_plain_c_api(), 0);
 }
 
 template <int tValue>
@@ -66,3 +72,4 @@ TEST(log2, macro_64_direct_operation_priority)
 	EXPECT_EQ(PRA_DEQUE_DETAIL_LOWER_LOG2_UINT64(2000 ? 7 : 2000), 2);
 	EXPECT_EQ(-PRA_DEQUE_DETAIL_LOWER_LOG2_UINT64(0x80), -7);
 }
+

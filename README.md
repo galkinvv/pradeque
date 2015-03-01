@@ -25,6 +25,14 @@ Provide a container that would be like a std::vector suitable as "default contai
 * use aligned arrays allocation
  * for known to be small internal arrays retrieve pointer to array from pointer to specific element
  * for big arrays this achieves aligment requirement for bounds 
+* no buffers except first contains associated extra internal data.
+ * first buffer is allocated before global table so it does contain reference to that table to make iterators be able to find table.
+ * buffer boundaries must be aligned so internal data can't be placed inside aligned object - it must be placed near it
+ * iterators pointing to first buffer that are created before allocating table has null table pointer and in extra bits may contain information placement
+ * data allocated for first block contains: 2 buffers of size 2**N for implementing circular behaviour for case of a few values and techical buffer of size 2**(N-1).
+  * this ensures that for size of techical buffer is 4 times smaller than data buffers, so the memory overhead is't so awful
+  * this is achieved by allocating (2**(N-1))*5 sized buffer allocated on 2**(N-1) boundary, selecting 2**N aligned part that is used for data buffer and the rest is used for technical data.
+  * the side that technical data is placed according the buffer is encoded in iterator extra bits.
 * possibly use small-size optimization: for initial elements allocate single array aligned 2 times more than typical block and just store two pointers to begin-end elements in it. This allows even efficient rotating for small queue usage pattern.
  * after expanding to table reuse first of them for pointer to table (other can be null or carry some other useful information).
 * the iterator should contain all information that is required to perform iteration in same block with very rare acesses to table. Example iterator: pointer to element, pointer to table element which lower bits encodes at least lower limit of container size.
@@ -48,6 +56,7 @@ But (index, reference to pradeque) pair shouldn't be used in this use case of pr
 It would allow very fast (direct address) access to element, random access to elements in same block without extra lookup (better than vector),
 And random access to element in another block with single extra lookup into table (like vector).
 There would be a bit more address calculations but they expected to be trivial.
+* for allow using in different scenarious the object must be move-assignable(C)/move-constructible(C++). So no internal pointers to main object is allowed.
 
 ### External API
 * C header declaring functions that gets extra argument with structure. Gives possibilyty to integrate into core of other projects.

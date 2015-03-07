@@ -10,6 +10,7 @@ Provide a container that would be like a std::vector suitable as "default contai
 ### Requirements to meet goal
 * include all features above
 * performance for emplace/push/pop_back and random access that is comparable with vectors
+* performance for operations operating on multiple elements that is comparable with vectors
 * memory efficiency for the case "many containers with a few objects"
 * memory efficiency for the case "one container with a lot of objects"
 
@@ -58,9 +59,11 @@ And random access to element in another block with single extra lookup into tabl
 There would be a bit more address calculations but they expected to be trivial.
 * for allow using in different scenarious the object must be move-assignable(C)/move-constructible(C++). So no internal pointers to main object is allowed.
 
-### External API
+### External API, "kernel" API
 * C header declaring functions that gets extra argument with structure. Gives possibilyty to integrate into core of other projects.
+ * Effeciency for basic "kernel" API is more importsant than simplicity of use. More simple API can be built over efficient API but not the other way.
+ * "Kernel" must allow efficient implementations of operations on multiple elements, for example by allowing iteration by sequential groups.
 * C++11 header with high stdlib compatibility
 * common code
- * so C++ version have to be wrapper around C passing const structure of parameters generated from template arguments
+ * so C++ version have to be wrapper around C passing const parameters generated from template arguments
 auto-generating wrapping extra parameter  

@@ -2,7 +2,14 @@
 #include "pradeque-inl.h"
 #include <gtest/gtest.h>
 #include <cstdint>
+#include <type_traits>
 using namespace std;
+/*template <class T>
+typename remove_reference<T>::type Val(T value)
+{
+	return value;
+}*/
+
 struct S
 {
     typedef const char cchar1_t[1];
@@ -19,7 +26,6 @@ typedef pradeque_detail::Core<S, uint64_t, 62, 5> Core;
 TEST(deque_core, cpp_api)
 {
     S s{""};
-	pradeque_release(0, 0);
 }
 
 extern "C" int count_errors_in_pradeque_plain_c_api();
@@ -29,33 +35,54 @@ TEST(deque_core, plain_c_api)
 }
 
 template <int tValue>
-struct Log2
+struct Value
 {
-	static const int kLowerLog;
+	static const int V = tValue;
 };
 
 template <int tValue>
-const int Log2<tValue>::kLowerLog = praDequeDetail_LowerLog2(tValue);
+struct Log2
+{
+	static int LowerLog(){return praDequeDetail_LowerLog2(tValue);}
+	static int UpperLog(){return praDequeDetail_UpperLog2(tValue);}
+};
 
 TEST(log2, func_via_class)
 {
-    EXPECT_EQ(Log2<   1>::kLowerLog, 0);
-    EXPECT_EQ(Log2<   2>::kLowerLog, 1);
-    EXPECT_EQ(Log2<   3>::kLowerLog, 1);
-    EXPECT_EQ(Log2<   4>::kLowerLog, 2);
-    EXPECT_EQ(Log2<   5>::kLowerLog, 2);
-    EXPECT_EQ(Log2<   6>::kLowerLog, 2);
-    EXPECT_EQ(Log2<   7>::kLowerLog, 2);
-    EXPECT_EQ(Log2<   8>::kLowerLog, 3);
-    EXPECT_EQ(Log2<   9>::kLowerLog, 3);
-    EXPECT_EQ(Log2<0xA>::kLowerLog, 3);
-    EXPECT_EQ(Log2<0xB>::kLowerLog, 3);
-    EXPECT_EQ(Log2<0xC>::kLowerLog, 3);
-    EXPECT_EQ(Log2<0xD>::kLowerLog, 3);
-    EXPECT_EQ(Log2<0xE>::kLowerLog, 3);
-    EXPECT_EQ(Log2<0xF>::kLowerLog, 3);
-    EXPECT_EQ(Log2<16>::kLowerLog, 4);
-    EXPECT_EQ(Log2<17>::kLowerLog, 4);
+    EXPECT_EQ(Log2<  1>::LowerLog(), 0);
+    EXPECT_EQ(Log2<  1>::UpperLog(), 0);
+    EXPECT_EQ(Log2<  2>::LowerLog(), 1);
+    EXPECT_EQ(Log2<  2>::UpperLog(), 1);
+    EXPECT_EQ(Log2<  3>::LowerLog(), 1);
+    EXPECT_EQ(Log2<  3>::UpperLog(), 2);
+    EXPECT_EQ(Log2<  4>::LowerLog(), 2);
+    EXPECT_EQ(Log2<  4>::UpperLog(), 2);
+    EXPECT_EQ(Log2<  5>::LowerLog(), 2);
+    EXPECT_EQ(Log2<  5>::UpperLog(), 3);
+    EXPECT_EQ(Log2<  6>::LowerLog(), 2);
+    EXPECT_EQ(Log2<  6>::UpperLog(), 3);
+    EXPECT_EQ(Log2<  7>::LowerLog(), 2);
+    EXPECT_EQ(Log2<  7>::UpperLog(), 3);
+    EXPECT_EQ(Log2<  8>::LowerLog(), 3);
+    EXPECT_EQ(Log2<  8>::UpperLog(), 3);
+    EXPECT_EQ(Log2<  9>::LowerLog(), 3);
+    EXPECT_EQ(Log2<  9>::UpperLog(), 4);
+    EXPECT_EQ(Log2<0xA>::LowerLog(), 3);
+    EXPECT_EQ(Log2<0xA>::UpperLog(), 4);
+    EXPECT_EQ(Log2<0xB>::LowerLog(), 3);
+    EXPECT_EQ(Log2<0xB>::UpperLog(), 4);
+    EXPECT_EQ(Log2<0xC>::LowerLog(), 3);
+    EXPECT_EQ(Log2<0xC>::UpperLog(), 4);
+    EXPECT_EQ(Log2<0xD>::LowerLog(), 3);
+    EXPECT_EQ(Log2<0xD>::UpperLog(), 4);
+    EXPECT_EQ(Log2<0xE>::LowerLog(), 3);
+    EXPECT_EQ(Log2<0xE>::UpperLog(), 4);
+    EXPECT_EQ(Log2<0xF>::LowerLog(), 3);
+    EXPECT_EQ(Log2<0xF>::UpperLog(), 4);
+    EXPECT_EQ(Log2<16>::LowerLog(), 4);
+    EXPECT_EQ(Log2<16>::UpperLog(), 4);
+    EXPECT_EQ(Log2<17>::LowerLog(), 4);
+    EXPECT_EQ(Log2<17>::UpperLog(), 5);
 }
 
 TEST(log2, macro_64_direct_big_values)

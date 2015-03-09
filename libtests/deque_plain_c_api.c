@@ -4,8 +4,8 @@ static pradeque_params_t my3chars_deque_params = {sizeof(my3chars)};
 
 int count_errors_in_pradeque_plain_c_api()
 {
-	pradeque_t d;
-	pradeque_release(&d, &my3chars_deque_params);
+	pradeque_t d = {};
+	pradeque_clear(&d, &my3chars_deque_params);
 	return 0;
 }
 

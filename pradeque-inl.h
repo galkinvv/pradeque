@@ -19,44 +19,6 @@
 #define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT32(x) (PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER32(((uint32_t)(x))))))))
 #define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT64(x) (PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER64(((uint64_t)(x)))))))))
 
-static inline int praDequeDetail_PackedExtraBits(size_t extra_value_range_size)
-{
-    assert(extra_value_range_size == (1u << PRA_DEQUE_DETAIL_LOWER_LOG2_UINT64(extra_value_range_size)));
-    return PRA_DEQUE_DETAIL_LOWER_LOG2_UINT64(extra_value_range_size);
-}
-
-static inline uintptr_t praDequeDetail_PackedExtraMask(size_t extra_value_range_size)
-{
-    assert(extra_value_range_size);
-    uintptr_t extra_mask = extra_value_range_size - 1;
-    assert(!(extra_value_range_size & extra_mask));//ensures that size is a power of 2
-    return extra_mask;
-}
-
-static inline uintptr_t praDequeDetail_PackedGetMainBeingMultiple(uintptr_t packed, size_t extra_value_range_size)
-{
-    return (packed & ~praDequeDetail_PackedExtraMask(extra_value_range_size));
-}
-
-static inline uintptr_t praDequeDetail_PackedGetExtra(uintptr_t packed, size_t extra_value_range_size)
-{
-    return packed & praDequeDetail_PackedExtraMask(extra_value_range_size);
-}
-
-static inline uintptr_t praDequeDetail_Packed(uintptr_t main_being_multiple, uintptr_t extra, size_t extra_value_range_size)
-{
-    assert(extra <= praDequeDetail_PackedExtraMask(extra_value_range_size));
-    assert(!(main_being_multiple & praDequeDetail_PackedExtraMask(extra_value_range_size)));
-    return main_being_multiple | extra;
-}
-
-static inline int praDequeDetail_LowerLog2(uint32_t i)
-{
-   return PRA_DEQUE_DETAIL_LOWER_LOG2_UINT32(i);
-}
-
-
-
 enum{
 
 kPradequeUnusedPPVoidBits = PRA_DEQUE_DETAIL_LOWER_LOG2_UINT32(sizeof(void*)),
@@ -77,19 +39,67 @@ kPradequeSizeBits = 2 * kPradequeAddressBits - (kPradequeAddressBits - kPradeque
 
 kPradequeHalfTableSize = 1 << (kPradequeTableIndexBits - 1),
 kPradequeHalfTableSmallSpecialEntries = 2, //count of first element that does not correspond to standard size calculating formula.
+kPradequeHalfTableSmallSpecial0MinSize = 1, //min size of special entry 0
+kPradequeHalfTableSmallSpecial1MinSize = 3, //min size of special entry 1
+kPradequeHalfTableSmallSpecialTotalMinBits = PRA_DEQUE_DETAIL_LOWER_LOG2_UINT64(kPradequeHalfTableSmallSpecial0MinSize + kPradequeHalfTableSmallSpecial0MinSize), //min bitness of total elements in all small entries
+kPradequeHalfTableSmallSpecialTotalMaxExtraBits = 5, //max possible extra bitness of all small entries
 
 //table size defines the relation between smallest and biggesst arrays.
 kPradequeHalfTableGroupedBy3Entries = (kPradequeHalfTableSize - kPradequeHalfTableSmallSpecialEntries) / 3,
-kPradequeLog2OfCapacityGrowByAddingAllGroupedBy3 = 2 * kPradequeHalfTableGroupedBy3Entries
+kPradequeLog2OfCapacityGrowByAddingAllGroupedBy3 = 2 * kPradequeHalfTableGroupedBy3Entries,
+//Max size addressed by all table blocks. Last +1 represents doubling when going from half table to full table
+kPradequeLog2MaxFullTableCapacity = kPradequeHalfTableSmallSpecialTotalMinBits + kPradequeHalfTableSmallSpecialTotalMaxExtraBits + kPradequeLog2OfCapacityGrowByAddingAllGroupedBy3 + 1
 
 };
 
+//utility functions
+
+static inline int praDequeDetail_LowerLog2(uintptr_t i)
+{
+   return PRA_DEQUE_DETAIL_LOWER_LOG2_UINT64(i);
+}
+
+static inline int praDequeDetail_UpperLog2(uintptr_t i)
+{
+   return (i <= 1) ? 0 : 1 + praDequeDetail_LowerLog2(i - 1);
+}
+
+static inline uintptr_t praDequeDetail_PackedExtraMask(int extra_bits)
+{
+    assert(extra_bits > 0);
+    return ((uintptr_t)1 << extra_bits) - 1;
+}
+
+static inline uintptr_t praDequeDetail_PackedGetMainBeingMultiple(uintptr_t packed, int extra_bits)
+{
+    return (packed & ~praDequeDetail_PackedExtraMask(extra_bits));
+}
+
+static inline uintptr_t praDequeDetail_PackedGetExtra(uintptr_t packed, int extra_bits)
+{
+    return packed & praDequeDetail_PackedExtraMask(extra_bits);
+}
+
+static inline uintptr_t praDequeDetail_Packed(uintptr_t main_being_multiple, uintptr_t extra, int extra_bits)
+{
+    assert(extra <= praDequeDetail_PackedExtraMask(extra_bits));
+    assert(!(main_being_multiple & praDequeDetail_PackedExtraMask(extra_bits)));
+    return main_being_multiple | extra;
+}
+
+//domain functions
+//return bit limitation of maximal size calculating maximal how much objects of size rounded up to next power of two can be placed in half of address space
+static inline int praDequeDetail_MaxSizeBitsUpToDeg2InHalfAddressSpace(size_t value_size)
+{
+    return kPradequeAddressBits - 1 - praDequeDetail_UpperLog2(value_size);
+}
+//API implementation
 #ifndef PRA_DEQUE_DETAIL_API
 #define PRA_DEQUE_DETAIL_API inline
 #endif
 
 PRA_DEQUE_DETAIL_API
-void pradeque_release(pradeque_t* deque, pradeque_params_t* params){}
+void pradeque_clear(pradeque_t* deque, pradeque_params_t* params){}
 
 PRA_DEQUE_DETAIL_API
 intptr_t pradeque_max_size(pradeque_params_t* params)

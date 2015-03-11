@@ -39,17 +39,14 @@ kPradequeSizeBits = 2 * kPradequeAddressBits - (kPradequeAddressBits - kPradeque
 
 kPradequeHalfTableSize = 1 << (kPradequeTableIndexBits - 1),
 kPradequeHalfTableSmallSpecialEntries = 2, //count of first element that does not correspond to standard size calculating formula.
-kPradequeHalfTableSmallSpecial0MinSize = 1, //min size of special entry 0
-kPradequeHalfTableSmallSpecial1MinSize = 3, //min size of special entry 1
-kPradequeHalfTableSmallSpecialTotalMinBits = PRA_DEQUE_DETAIL_LOWER_LOG2_UINT64(kPradequeHalfTableSmallSpecial0MinSize + kPradequeHalfTableSmallSpecial0MinSize), //min bitness of total elements in all small entries
-kPradequeHalfTableSmallSpecialTotalMaxExtraBits = 5, //max possible extra bitness of all small entries
+kPradequeHalfTableSmallSpecial0MinSize = sizeof(void*)*2, //min object count of special entry 0. In first version to simplicity is much enouhg to place pointer in half of block
+kPradequeHalfTableSmallSpecial1MinSize = 3*kPradequeHalfTableSmallSpecial0MinSize, //min size of special entry 1
+kPradequeHalfTableSmallSpecialTotalMinBits = PRA_DEQUE_DETAIL_LOWER_LOG2_UINT64(kPradequeHalfTableSmallSpecial0MinSize + kPradequeHalfTableSmallSpecial1MinSize), //min bitness of total elements in all small entries
+kPradequeFirstAllocationMaxOptimalBytes = 512, //byte count being optimal for first allocation (size for gcc std deque, also leads to minimal block size 32 for 64-bit objects)
 
 //table size defines the relation between smallest and biggesst arrays.
 kPradequeHalfTableGroupedBy3Entries = (kPradequeHalfTableSize - kPradequeHalfTableSmallSpecialEntries) / 3,
 kPradequeLog2OfCapacityGrowByAddingAllGroupedBy3 = 2 * kPradequeHalfTableGroupedBy3Entries,
-//Max size addressed by all table blocks. Last +1 represents doubling when going from half table to full table
-kPradequeLog2MaxFullTableCapacity = kPradequeHalfTableSmallSpecialTotalMinBits + kPradequeHalfTableSmallSpecialTotalMaxExtraBits + kPradequeLog2OfCapacityGrowByAddingAllGroupedBy3 + 1
-
 };
 
 //utility functions
@@ -93,6 +90,19 @@ static inline int praDequeDetail_MaxSizeBitsUpToDeg2InHalfAddressSpace(size_t va
 {
     return kPradequeAddressBits - 1 - praDequeDetail_UpperLog2(value_size);
 }
+
+//Calculates shift to use for calculation value_size specific small block sizes from default small block size.
+static inline int praDequeDetail_ShiftForSmallBlockSizes(size_t value_size)
+{
+    //*2 corresponds to single allocation of two smallest blocks.
+    const int small_blocks_in_optimal_bytes = kPradequeFirstAllocationMaxOptimalBytes / (value_size * kPradequeHalfTableSmallSpecial0MinSize * 2);
+    return praDequeDetail_LowerLog2(small_blocks_in_optimal_bytes);
+}
+//Calculates bits required to adress value in all small block.
+static inline int praDequeDetail_TotalHalfSmallBlocksAdressBits(size_t value_size)
+{
+    return kPradequeHalfTableSmallSpecialTotalMinBits + praDequeDetail_ShiftForSmallBlockSizes(value_size);
+}
 //API implementation
 #ifndef PRA_DEQUE_DETAIL_API
 #define PRA_DEQUE_DETAIL_API inline
@@ -102,10 +112,11 @@ PRA_DEQUE_DETAIL_API
 void pradeque_clear(pradeque_t* deque, pradeque_params_t* params){}
 
 PRA_DEQUE_DETAIL_API
-intptr_t pradeque_max_size(pradeque_params_t* params)
+intptr_t pradeque_max_size(size_t value_size)
 {
-    //size is limited by two factors: maximal allocatable array and number of bits used for size storage (kPradequeSizeBits)
-    //maximal allocatable array is limited by address space (kPradequeAddressBits) and table size (estimate bitness of all small special and add kPradequeLog2OfCapacityGrowByAddingAllGroupedBy3)
+    const int max_bits_size = kPradequeSizeBits;//bits used for size storage
+    const int max_bits_heap = praDequeDetail_MaxSizeBitsUpToDeg2InHalfAddressSpace(value_size);//maximal allocatable array is limited by address space
+    const int max_bits_table = praDequeDetail_TotalHalfSmallBlocksAdressBits(value_size) + kPradequeLog2OfCapacityGrowByAddingAllGroupedBy3 + 1;//log2 of element count that can be placed in all blocks in table. +1 corresponds to table consisting of two halves.
 	
 	//first calculate max size bitness, then calculate size itself
 	return 0;

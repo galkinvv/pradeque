@@ -39,7 +39,7 @@ pradeque_t;
 typedef struct pradeque_params_nonconst_struct_t
 {
     size_t value_size;//size of values stored in the container. All values are aligned to maximal power of two that divides size
-
+    //instances are always aligned to the greatest power of 2 dividing value_size
 	//memory allocator
     void* (*aligned_alloc)(size_t alignment, size_t size, const struct pradeque_params_nonconst_struct_t* context);//aligned memory allocate function or NULL to use aligned_alloc
     void (*aligned_free)(void *block, size_t alignment, size_t size, const struct pradeque_params_nonconst_struct_t* context);//aligned memory free function or NULL to use free
@@ -68,4 +68,4 @@ void pradeque_clear(pradeque_t* deque, pradeque_params_t* params);//releases all
 
 //sizes are expressed in signed types because pradeque does not allow such big sizes that does fit in unsigned types but doesn't fit in unsigned. This is expressed in API as result types
 intptr_t pradeque_size(const pradeque_t* deque, pradeque_params_t* params);
-intptr_t pradeque_max_size(pradeque_params_t* params);
+intptr_t pradeque_max_size(size_t value_size)

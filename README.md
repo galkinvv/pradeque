@@ -9,7 +9,7 @@ Provide a container that would be like a std::vector suitable as "default contai
 
 ### Requirements to meet goal
 * include all features above
-* performance for emplace/push/pop_back and random access that is comparable with vectors
+* performance for emplace/push/pop back and random access that is comparable with vectors
 * performance for operations operating on multiple elements that is comparable with vectors
 * memory efficiency for the case "many containers with a few objects"
 * memory efficiency for the case "one container with a lot of objects"
@@ -46,6 +46,12 @@ Provide a container that would be like a std::vector suitable as "default contai
  * fbvector: autodetect and use jemalloc
   * pradeque: optimize performance for jemalloc case; split out allocator api alllowing using non-standard allocator with extra options to free
 * tradeoffs: for first version tradeoffs may be made assuming system with large virtual address space and for which address computations are a lot faster than memory access.
+* tradeoffs: extra memory vs iteration speed
+  * tge bigger block allows faster iteration, the smaller block allows more efficient memory usage
+  * require block size to be minimal for iteration speed be nearly equal to speed for very bif block
+  * be traditional, look how tgis is implemented in existing containers
+   * all current deques limiting the size in term of bytes
+   * gcc std vector uses 1 as min size.
 
 ### Use case analysis
 
@@ -66,4 +72,5 @@ There would be a bit more address calculations but they expected to be trivial.
 * C++11 header with high stdlib compatibility
 * common code
  * so C++ version have to be wrapper around C passing const parameters generated from template arguments
-auto-generating wrapping extra parameter  
+auto-generating wrapping extra parameter
+* align is implicitly calculated from object size. This follows from efficient iteration imlementation and allows to keep API simpler.

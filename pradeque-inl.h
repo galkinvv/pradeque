@@ -119,7 +119,8 @@ intptr_t pradeque_max_size(size_t value_size)
     const int max_bits_table = praDequeDetail_TotalHalfSmallBlocksAdressBits(value_size) + kPradequeDetailLog2OfCapacityGrowByAddingAllGroupedBy3 + 1;//log2 of element count that can be placed in all blocks in table. +1 corresponds to table consisting of two halves.
 	
 	//first calculate max size bitness, then calculate size itself
-    const int max_heap_table = max_bits_heap > max_bits_table ? max_bits_heap : max_bits_table;
-    const int max_all = max_bits_size > max_heap_table ? max_bits_size : max_heap_table;
-	return (((intptr_t)1) << max_all) - 1;
+    const int min_heap_table = max_bits_heap < max_bits_table ? max_bits_heap : max_bits_table;
+    const int min_all = max_bits_size < max_heap_table ? max_bits_size : max_heap_table;
+
+	return ~((~(intptr_t)0) << (min_all -1));
 }

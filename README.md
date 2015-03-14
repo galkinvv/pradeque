@@ -38,6 +38,14 @@ Provide a container that would be like a std::vector suitable as "default contai
  * after expanding to table reuse first of them for pointer to table (other can be null or carry some other useful information).
 * the iterator should contain all information that is required to perform iteration in same block with very rare acesses to table. Example iterator: pointer to element, pointer to table element which lower bits encodes at least lower limit of container size.
 * the object itself should contain all information to perform all front/back related operations that does't require memory alloc/free without acessing the table.
+ * so it need to contain begin and end iterators
+  * iterators share address part corresponding to table address. This area can be used for other information.
+ * it's good for objext to contain all information required to calculate size
+  * size can't be stored directly because require many bits
+  * we can store extra information required to internal function of distance calculation
+   * so to design what information must be stored here internal function of distance calculation must be designed
+   * to be sure that distance between iterators pointing to the same block is simple we should limit container max size to such value that no block can contain both begin and end for container with max_size
+   * one possibility of extra information required to disatnce calculation is the logical position of smallest blocks in the table.
 * analyze fbvector optimizations and try to apply them
  * fbvector: allocation sizes that can be reused durin grow.
   * pradeque: in queue scenario of usage sum of all smaller blocks sizes are a bit smaller than the bigger block

@@ -44,6 +44,12 @@ Provide a container that would be like a std::vector suitable as "default contai
   * size can't be stored directly because require many bits
   * we can store extra information required to internal function of distance calculation
    * so to design what information must be stored here internal function of distance calculation must be designed
+    * first check if iterators belong to the same block
+	  * if they are - just subtract
+	  * otherwise load information about block size and from-zero-side from table
+	 * **Think about including this info in main block id**
+	 * if sizes and from-zero-side are the same
+
    * to be sure that distance between iterators pointing to the same block is simple we should limit container max size to such value that no block can contain both begin and end for container with max_size
    * one possibility of extra information required to disatnce calculation is the logical position of smallest blocks in the table.
 * analyze fbvector optimizations and try to apply them

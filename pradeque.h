@@ -64,7 +64,8 @@ intptr_t pradeque_distance(const pradeque_iterator_t* first, const pradeque_iter
 pradeque_contigous_block_iterator_t pradeque_next_contigous_block(pradeque_contigous_block_iterator_t previous_or_start, const pradeque_iterator_t* first, const pradeque_iterator_t* last, pradeque_params_t* params);
 pradeque_contigous_block_iterator_t pradeque_prev_contigous_block(pradeque_contigous_block_iterator_t next_or_end, const pradeque_iterator_t* first, const pradeque_iterator_t* last, pradeque_params_t* params);
 
-void pradeque_clear(pradeque_t* deque, pradeque_params_t* params);//releases allocated memory
+//can be clear more efficient than pradeque_pop_back(begin()) &  seems that it would have the same efficiency and behaviour, so it is not needed in kernel
+//void pradeque_clear(pradeque_t* deque, pradeque_params_t* params);//releases allocated memory
 
 //sizes are expressed in signed types because pradeque does not allow such big sizes that does fit in unsigned types but doesn't fit in unsigned. This is expressed in API as result types
 intptr_t pradeque_size(const pradeque_t* deque, pradeque_params_t* params);

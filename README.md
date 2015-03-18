@@ -44,6 +44,26 @@ Provide a container that would be like a std::vector suitable as "default contai
   * size can't be stored directly because require many bits
   * we can store extra information required to internal function of distance calculation
    * so to design what information must be stored here internal function of distance calculation must be designed
+* design of distance and advance operations
+ * each iterator contains info about block size, so for both diff and advance operations we can say if they involves more than one block
+  * if only one block is involved - use simplest arithmetic without any table access.
+  * diff case
+   * if both iteartors are in "no-table-pointer" mode that is used for first block before table allocation calculate diff using block relative position info encoded in two info bits of iterator
+    * each of two blocks has 2-bit integer corresponding to it. Integers differ by one mod 4. The smaller by one precceds the bigger. When block is empt it can be placed on the other side of other by adding 2 mod 4.
+	 * otherwise both iterators are upgraded by reaching table using it reference in ther iterator.
+	* if both iterators has "plain table adressing" bit set difference is calculated with plain table adressing mode
+	* otherwise table is consulted to get current adressing mode and difference is calculated with it.
+  * advance case
+   * if iteartor is in "no-table-pointer" mode
+	* if iterator  "plain table adressing" bit set calculate target table position and read it.
+	 * if table position is not filled (initially or after-init zeroed) or if it has "no plain adressing" bit set load current aressing mode from table.
+
+
+   * each of two blocks has 2-bit integer corresponding to it. Integers differ by one mod 4. The smaller by one precceds the bigger. When block is empt it can be placed on the other side of other by adding 2 mod 4.
+	 * otherwise both iterators are upgraded by reaching table using it reference in ther iterator.
+	* if both iterators has "plain table adressing" bit set difference is calculated with plain table adressing mode
+	* otherwise table is consulted to get current adressing mode and difference is calculated with it.
+
     * first check if iterators belong to the same block
 	  * if they are - just subtract
 	  * otherwise load information about block size and from-zero-side from table
@@ -52,6 +72,9 @@ Provide a container that would be like a std::vector suitable as "default contai
 
    * to be sure that distance between iterators pointing to the same block is simple we should limit container max size to such value that no block can contain both begin and end for container with max_size
    * one possibility of extra information required to disatnce calculation is the logical position of smallest blocks in the table.
+
+
+
 * analyze fbvector optimizations and try to apply them
  * fbvector: allocation sizes that can be reused durin grow.
   * pradeque: in queue scenario of usage sum of all smaller blocks sizes are a bit smaller than the bigger block

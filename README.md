@@ -44,6 +44,17 @@ Provide a container that would be like a std::vector suitable as "default contai
   * size can't be stored directly because require many bits
   * we can store extra information required to internal function of distance calculation
    * so to design what information must be stored here internal function of distance calculation must be designed
+* operation modes
+ * no-table-pointer mode
+  * used until the table is firstly allocated
+  * quite effective for small sizes, alllows even small queues
+  * is memory-effective for small sizes because no table is allocated.
+  * allows initially to use memory optimally for both "puth to one side" and "push to both sides" strategy
+   * facts of bidirectional usage should be collected in a bit during this phase - they would be needed
+  * after table is once allocated this mode is never used, because usage strategy shows that table was required and data about bidirectinal usage is collected.
+ * plain table adressing
+  * used unntil first roundtrip-after queue usage occured
+ * no plain table addressing
 * design of distance and advance operations
  * each iterator contains info about block size, so for both diff and advance operations we can say if they involves more than one block
   * if only one block is involved - use simplest arithmetic without any table access.
@@ -74,7 +85,11 @@ Provide a container that would be like a std::vector suitable as "default contai
    * one possibility of extra information required to disatnce calculation is the logical position of smallest blocks in the table.
 
 
-
+* memory free strategy
+ * it's a bad idea to free block immediately after it become unused because there is high chance it would be used again
+ * it's a bad idea to check about freeing blocks too often
+  * idea 1: free blocks when next block become unused. Simple but very memoey effective. Neither std::vector is.
+  * idea 2: free blocks when end iterator adjusted over next-minimal-block aside of unfreed block
 * analyze fbvector optimizations and try to apply them
  * fbvector: allocation sizes that can be reused durin grow.
   * pradeque: in queue scenario of usage sum of all smaller blocks sizes are a bit smaller than the bigger block

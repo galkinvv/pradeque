@@ -54,6 +54,7 @@ Provide a container that would be like a std::vector suitable as "default contai
   * after table is once allocated this mode is never used, because usage strategy shows that table was required and data about bidirectinal usage is collected.
  * plain table adressing
   * used unntil first roundtrip-after queue usage occured
+  * to be able switch from plain adressing to another mode we need to mark entire table as "initially ubused". To do it we pass special "need to zero memory" parameter.
  * no plain table addressing
 * design of distance and advance operations
  * each iterator contains info about block size, so for both diff and advance operations we can say if they involves more than one block
@@ -65,26 +66,15 @@ Provide a container that would be like a std::vector suitable as "default contai
 	* if both iterators has "plain table adressing" bit set difference is calculated with plain table adressing mode
 	* otherwise table is consulted to get current adressing mode and difference is calculated with it.
   * advance case
-   * if iteartor is in "no-table-pointer" mode
+   * if iteartor is in "no-table-pointer" mode, a field-near-first block is consulted.
+    * if table exists iterator is upgraded to current mode.
+	 * otherwise advance is calculated with assumption that requested block exists.
 	* if iterator  "plain table adressing" bit set calculate target table position and read it.
-	 * if table position is not filled (initially or after-init zeroed) or if it has "no plain adressing" bit set load current aressing mode from table.
-
-
-   * each of two blocks has 2-bit integer corresponding to it. Integers differ by one mod 4. The smaller by one precceds the bigger. When block is empt it can be placed on the other side of other by adding 2 mod 4.
-	 * otherwise both iterators are upgraded by reaching table using it reference in ther iterator.
-	* if both iterators has "plain table adressing" bit set difference is calculated with plain table adressing mode
-	* otherwise table is consulted to get current adressing mode and difference is calculated with it.
-
-    * first check if iterators belong to the same block
-	  * if they are - just subtract
-	  * otherwise load information about block size and from-zero-side from table
-	 * **Think about including this info in main block id**
-	 * if sizes and from-zero-side are the same
-
-   * to be sure that distance between iterators pointing to the same block is simple we should limit container max size to such value that no block can contain both begin and end for container with max_size
-   * one possibility of extra information required to disatnce calculation is the logical position of smallest blocks in the table.
-
-
+	 * if table position is not filled (initially zeroed, or marked as unused/freed) upgrade to "no plain adressing" mode
+	* for non-plain-addressing table is consulted first time to get current adressing mode and second time to load pointer to allocated block.
+  * so for iterators with table pointer two techincal bits are used:
+   * bit describing if plain adressing mode should be tried
+   * (there was idea to have a bit that can be used to determine if distance should be calculated over zero or ovre max but this can be solved by size limiting)
 * memory free strategy
  * it's a bad idea to free block immediately after it become unused because there is high chance it would be used again
  * it's a bad idea to check about freeing blocks too often
@@ -98,6 +88,7 @@ Provide a container that would be like a std::vector suitable as "default contai
  * fbvector: autodetect and use jemalloc
   * pradeque: optimize performance for jemalloc case; split out allocator api alllowing using non-standard allocator with extra options to free
 * tradeoffs: for first version tradeoffs may be made assuming system with large virtual address space and for which address computations are a lot faster than memory access.
+* tradeoffs: for first version tradeoffs may be made assuming compiler that can optimize out any calculation that has all data available in compile time (inlining with specific parameters).
 * tradeoffs: extra memory vs iteration speed
   * tge bigger block allows faster iteration, the smaller block allows more efficient memory usage
   * require block size to be minimal for iteration speed be nearly equal to speed for very bif block
@@ -121,6 +112,8 @@ There would be a bit more address calculations but they expected to be trivial.
 * C header declaring functions that gets extra argument with structure. Gives possibilyty to integrate into core of other projects.
  * Effeciency for basic "kernel" API is more importsant than simplicity of use. More simple API can be built over efficient API but not the other way.
  * "Kernel" must allow efficient implementations of operations on multiple elements, for example by allowing iteration by sequential groups.
+  * all provided operations should operate in terms of iterating of contigous mem blocks.
+   * the exception are operations that can be more efficiently computed without pre-contigous block iteration used even internally
 * C++11 header with high stdlib compatibility
 * common code
  * so C++ version have to be wrapper around C passing const parameters generated from template arguments

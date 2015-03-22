@@ -5,7 +5,8 @@ typedef struct
 {
     void* value;//points to value stored in container. Can be NULL only for past-the-end iterator pointing to yet-not-allocated table
 	uintptr_t table_entry_id;
-	//id is implemened as  packed value with pointer to table and extra flags used for alignment (if non-zero pointer) or indicating of techical data placement(if zero pointer).
+	//id is implemened as  packed value with pointer to table(zero means no-table mode), table logical index (used to track the order of blocks for no-table mode)
+	//and extra flags used for indicating plain adressing mode usage (if with-table mode) or indicating of techical data placement(ino-table mode).
 	//pointer to table entry with extra data set to lower estimation of additional alignment bits to alignment of smallest block that were used for this block start and finish addresses;
 	//for first arrays allocated while table address were unknown the entry pointer maybe zero - it would be loaded from known table offset
 	//note that align_at_least is not required to be set to non-zero value even if such alignment exist
@@ -14,59 +15,80 @@ pradeque_iterator_t;
 
 typedef struct
 {
-    void* first; //points to first element of block
-	void *post_last;//points after last element of block
-	//Al fields are NULL/0 for past-the-end block iterator. Pre-begin  iterator equals past the end.
-	//non-NULL first and post_last are never equal.
-	uintptr_t table_entry_id; //see pradeque_iterator_t definition
+    pradeque_iterator_t first; //points to first element of contigous block
+	void *post_last;//points after last element of contigous block
+	intptr_t advance; //advance that is expected to be itearted.
 }
-pradeque_contigous_block_iterator_t;
+pradeque_contigous_block_iteration_t; //it is not iterator with STL semantics. It imore correspond to iteration process that can be controled via this object
+
+typedef struct
+{
+	pradeque_contigous_block_iteration_t iteration;
+}pradeque_pop_iteration_t;//tiny wrapper to protect from misusing generic iteration_t object in pop operations
 
 typedef struct
 {
    struct {
 	   void *first;
-	   void *post_last;
-	   uintptr_t last_entry_packed_with_lo_first_entry_index;//pointer to table entry of post_last with extra data set to low bits of table index for first entry
-	   //table entry can be zero until table is allocated; first_entry_index can be used to store info about relative positions of array parts
+	   uintptr_t first_logical_index_packed_with_flags;
+	   //stores first logical index and differnt flags describing container usage: current addressing mode constants, bidirectional usage presence, ...
+	   //when becomes empty the table pointer is stored instead of first logical index
 
-	   uintptr_t hi_first_entry_index_packed_with_size;//high bits of table index for first entry with extra data set to total element count
+	   pradeque_iterator_t post_last;
    } detail; //pradeque_t details are not part of API
 }
 pradeque_t;
 
-//TODO: pass only needed parameters to every function
 typedef struct pradeque_params_nonconst_struct_t
 {
     size_t value_size;//size of values stored in the container. All values are aligned to maximal power of two that divides size
-    //instances are always aligned to the greatest power of 2 dividing value_size
-	//memory allocator
-    void* (*aligned_alloc)(size_t alignment, size_t size, const struct pradeque_params_nonconst_struct_t* context);//aligned memory allocate function or NULL to use aligned_alloc
-    void (*aligned_free)(void *block, size_t alignment, size_t size, const struct pradeque_params_nonconst_struct_t* context);//aligned memory free function or NULL to use free
+	intptr_t max_size;//sizes are expressed in signed types because pradeque does not allow such big sizes that does fit in unsigned types but doesn't fit in unsigned. This is expressed in API as types
+	struct
+	{
+		int size_aligned_bits;//size is demultiplied in power of two
+		size_t odd_value_size;//and odd number
+		intptr_t odd_mul_to_get_1_mod_max_block; //Bezout coefficient for odd_value_size and max block size. Needed for calculation the block range from any inner block pointer.
+		//TODO: some precalculated info for block sizes.
+	}detail;
 }
 const pradeque_params_t;
+
+//TODO:this somehow must be done in compile time. Via macro or via inlinng
+//it is absolutely needed fo efficiency, and for constexpr max_size() in c++.
+//The macro implementation is possible but is quite complicated.
+//So until the architecture become stable enough to determine what exact parameters are needed, it would stay as a function
+pradeque_params_t pradeque_prepare_params(size_t value_size);
+//instances are always aligned to the greatest power of 2 dividing value_size
+
+
+typedef void* pradeque_allocator_t(size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context);//aligned memory allocate function
+typedef void pradeque_deallocator_t(void *block, size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context);//memory deallocate function that is passed all extra parameters used for allocation
+
+void* pradeque_allocator_default(size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context);
+void pradeque_deallocator_default(void *block, size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context);
 
 pradeque_iterator_t pradeque_begin(const pradeque_t* deque, pradeque_params_t* params);
 pradeque_iterator_t pradeque_end(const pradeque_t* deque, pradeque_params_t* params);
 
-void pradeque_advance(pradeque_iterator_t* iterator_to_advance, intptr_t advance_by, pradeque_params_t* params);
+intptr_t pradeque_distance(pradeque_iterator_t first, pradeque_iterator_t last, pradeque_params_t* params); //can be implemented without iterating all contigous blocks
+pradeque_iterator_t pradeque_advance(pradeque_iterator_t iterator_to_advance, intptr_t advance_by, pradeque_params_t* params);//can be implemented without iterating all contigous blocks
+//by there is no size method; however it's efficiency can be more that begin + end + distance if in indirect mode adressing params are loaded from deque not from table
+//may be distance_fast method can be introduced to get faser distance with known deque object. May be not only distance
 
-//returns iterator being start of added region
-pradeque_iterator_t pradeque_push_front(pradeque_t* deque, intptr_t count_to_add, pradeque_params_t* params);
-//returns iterator being end of added region
-pradeque_iterator_t pradeque_push_back(pradeque_t* deque, intptr_t count_to_add, pradeque_params_t* params);
+//returns pushed contigous block and remaining begin advance
+pradeque_contigous_block_iteration_t pradeque_push_front(pradeque_t* deque, intptr_t begin_advance/*always <=0*/, pradeque_params_t* params, pradeque_allocator_t allocator);
+//returns pushed contigous block and remaining end advance
+pradeque_contigous_block_iteration_t pradeque_push_back(pradeque_t* deque, intptr_t end_advance/*always >=0*/, pradeque_params_t* params, pradeque_allocator_t allocator);
 
-//returns count of erased elements
-intptr_t pradeque_pop_front(pradeque_t* deque, pradeque_iterator_t pop_to, pradeque_params_t* params);
-intptr_t pradeque_pop_back(pradeque_t* deque, pradeque_iterator_t pop_from, pradeque_params_t* params);
+//removing requires knowtion of removed elements before theay are erased. So there is one more function called before first pop
+pradeque_pop_iteration_t pradeque_pop_front_prepare(const pradeque_t* deque,  intptr_t begin_advance/*always >=0*/, pradeque_params_t* params);
+pradeque_pop_iteration_t pradeque_pop_front(pradeque_t* deque, pradeque_pop_iteration_t/*advane always >=0*/, pradeque_params_t* params, pradeque_deallocator_t deallocator);
 
-intptr_t pradeque_distance(const pradeque_iterator_t* first, const pradeque_iterator_t* last, pradeque_params_t* params); //can be implemented without iterating all contigous blocks
-pradeque_contigous_block_iterator_t pradeque_next_contigous_block(pradeque_contigous_block_iterator_t previous_or_start, const pradeque_iterator_t* first, const pradeque_iterator_t* last, pradeque_params_t* params);
-pradeque_contigous_block_iterator_t pradeque_prev_contigous_block(pradeque_contigous_block_iterator_t next_or_end, const pradeque_iterator_t* first, const pradeque_iterator_t* last, pradeque_params_t* params);
+pradeque_pop_iteration_t pradeque_pop_back_prepare(const pradeque_t* deque,  intptr_t end_advance/*always <=0*/, pradeque_params_t* params);
+pradeque_pop_iteration_t pradeque_pop_back(pradeque_t* deque, pradeque_pop_iteration_t/*advane always <=0*/, pradeque_params_t* params, pradeque_deallocator_t deallocator);
 
-//can be clear more efficient than pradeque_pop_back(begin()) &  seems that it would have the same efficiency and behaviour, so it is not needed in kernel
-//void pradeque_clear(pradeque_t* deque, pradeque_params_t* params);//releases allocated memory
+//to begin such iteartion a contigous block with zero size corresponding to some iteartor and expected advance must be prepared
+pradeque_contigous_block_iteration_t pradeque_next_contigous_block(pradeque_contigous_block_iteration_t current/*advance always >=0*/, pradeque_params_t* params);
+pradeque_contigous_block_iteration_t pradeque_prev_contigous_block(pradeque_contigous_block_iteration_t current/*advance always <=0*/, pradeque_params_t* params);
 
-//sizes are expressed in signed types because pradeque does not allow such big sizes that does fit in unsigned types but doesn't fit in unsigned. This is expressed in API as result types
-intptr_t pradeque_size(const pradeque_t* deque, pradeque_params_t* params);
-intptr_t pradeque_max_size(size_t value_size)
+void pradeque_clear(pradeque_t* deque, pradeque_params_t* params, pradeque_deallocator_t deallocator);//releases all allocated memory including caches (table, first block etc)

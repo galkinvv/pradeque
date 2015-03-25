@@ -39,19 +39,19 @@ typedef struct
 }
 pradeque_t;
 
-typedef struct pradeque_params_nonconst_struct_t
+typedef struct
 {
-    size_t value_size;//size of values stored in the container. All values are aligned to maximal power of two that divides size
-	intptr_t max_size;//sizes are expressed in signed types because pradeque does not allow such big sizes that does fit in unsigned types but doesn't fit in unsigned. This is expressed in API as types
-	struct
+    const size_t value_size;//size of values stored in the container. All values are aligned to maximal power of two that divides size
+	const intptr_t max_size;//sizes are expressed in signed types because pradeque does not allow such big sizes that does fit in unsigned types but doesn't fit in unsigned. This is expressed in API as types
+	const struct
 	{
 		int size_aligned_bits;//size is demultiplied in power of two
+		int small_block_entries_log2;//log2 of entries count in small block
 		size_t odd_value_size;//and odd number
 		intptr_t odd_mul_to_get_1_mod_max_block; //Bezout coefficient for odd_value_size and max block size. Needed for calculation the block range from any inner block pointer.
-		//TODO: some precalculated info for block sizes.
 	}detail;
 }
-const pradeque_params_t;
+pradeque_params_t;
 
 //TODO:this somehow must be done in compile time. Via macro or via inlinng
 //it is absolutely needed fo efficiency, and for constexpr max_size() in c++.
@@ -81,11 +81,11 @@ pradeque_contigous_block_iteration_t pradeque_push_front(pradeque_t* deque, intp
 pradeque_contigous_block_iteration_t pradeque_push_back(pradeque_t* deque, intptr_t end_advance/*always >=0*/, pradeque_params_t* params, pradeque_allocator_t allocator);
 
 //removing requires knowtion of removed elements before theay are erased. So there is one more function called before first pop
-pradeque_pop_iteration_t pradeque_pop_front_prepare(const pradeque_t* deque,  intptr_t begin_advance/*always >=0*/, pradeque_params_t* params);
-pradeque_pop_iteration_t pradeque_pop_front(pradeque_t* deque, pradeque_pop_iteration_t/*advane always >=0*/, pradeque_params_t* params, pradeque_deallocator_t deallocator);
+pradeque_pop_iteration_t pradeque_pop_front_prepare(const pradeque_t* deque, intptr_t begin_advance/*always >=0*/, pradeque_params_t* params);
+pradeque_pop_iteration_t pradeque_pop_front(pradeque_t* deque, pradeque_pop_iteration_t block_to_pop/*advane always >=0*/, pradeque_params_t* params, pradeque_deallocator_t deallocator);
 
-pradeque_pop_iteration_t pradeque_pop_back_prepare(const pradeque_t* deque,  intptr_t end_advance/*always <=0*/, pradeque_params_t* params);
-pradeque_pop_iteration_t pradeque_pop_back(pradeque_t* deque, pradeque_pop_iteration_t/*advane always <=0*/, pradeque_params_t* params, pradeque_deallocator_t deallocator);
+pradeque_pop_iteration_t pradeque_pop_back_prepare(const pradeque_t* deque, intptr_t end_advance/*always <=0*/, pradeque_params_t* params);
+pradeque_pop_iteration_t pradeque_pop_back(pradeque_t* deque, pradeque_pop_iteration_t block_to_pop/*advane always <=0*/, pradeque_params_t* params, pradeque_deallocator_t deallocator);
 
 //to begin such iteartion a contigous block with zero size corresponding to some iteartor and expected advance must be prepared
 pradeque_contigous_block_iteration_t pradeque_next_contigous_block(pradeque_contigous_block_iteration_t current/*advance always >=0*/, pradeque_params_t* params);

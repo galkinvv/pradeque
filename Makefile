@@ -17,10 +17,13 @@ GCC_WARNINGS=-Wall -Wextra -Wuninitialized -W -Wparentheses -Wformat=2 -Wswitch-
 GCC_WARNINGS_OFF=-Wno-missing-field-initializers -Wno-format-nonliteral -Wno-unknown-pragmas
 GXX_WARNINGS_OFF=-Wno-reorder
 
-CFLAGS = $(GCC_WARNINGS_OFF) $(GCC_WARNINGS) -g -march=native -mtune=native -MD -MP -ffunction-sections -fdata-sections
-ALL_CXX_LANG_FLAGS=$(CFLAGS) $(GXX_WARNINGS_OFF) -std=c++11
+ALL_C_LANG_CFLAGS = $(GCC_WARNINGS_OFF) $(GCC_WARNINGS)
+ALL_CXX_LANG_FLAGS=$(ALL_C_LANG_CFLAGS) $(GXX_WARNINGS_OFF) -std=c++11
 
-CXXFLAGS = $(ALL_CXX_LANG_FLAGS) -O$(OPTIMIZE)
+REAL_BUILD_FLAGS =  -MD -MP -O$(OPTIMIZE) -g -march=native -mtune=native -ffunction-sections -fdata-sections
+
+CFLAGS = $(ALL_C_LANG_CFLAGS) $(REAL_BUILD_FLAGS) -std=c11
+CXXFLAGS = $(ALL_CXX_LANG_FLAGS) $(REAL_BUILD_FLAGS)
 #CXXFLAGS = -g -pg -O3 -march=native -mtune=native
 
 LDFLAGS = -O$(OPTIMIZE) -g 

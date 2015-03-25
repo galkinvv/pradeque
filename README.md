@@ -30,9 +30,9 @@ Provide a container that would be like a std::vector suitable as "default contai
  * first buffer is allocated before global table so it does contain reference to that table to make iterators be able to find table.
  * buffer boundaries must be aligned so internal data can't be placed inside aligned object - it must be placed near it
  * iterators pointing to first buffer that are created before allocating table has null table pointer and in extra bits may contain information placement
- * data allocated for first block contains: 2 buffers of size 2**N for implementing circular behaviour for case of a few values and techical buffer of size 2**(N-1).
+ * data allocated for first block contains: 2 buffers of size 2 ^ N for implementing circular behaviour for case of a few values and techical buffer of size 2 ^ (N-1).
   * this ensures that for size of techical buffer is 4 times smaller than data buffers, so the memory overhead is't so awful
-  * this is achieved by allocating (2**(N-1))*5 sized buffer allocated on 2**(N-1) boundary, selecting 2**N aligned part that is used for data buffer and the rest is used for technical data.
+  * this is achieved by allocating (2 ^ (N-1)) * 5 sized buffer allocated on 2 ^ (N-1) boundary, selecting 2 ^ N aligned part that is used for data buffer and the rest is used for technical data.
   * the side that technical data is placed according the buffer is encoded in iterator extra bits.
 * possibly use small-size optimization: for initial elements allocate single array aligned 2 times more than typical block and just store two pointers to begin-end elements in it. This allows even efficient rotating for small queue usage pattern.
  * after expanding to table reuse first of them for pointer to table (other can be null or carry some other useful information).
@@ -52,10 +52,13 @@ Provide a container that would be like a std::vector suitable as "default contai
   * allows initially to use memory optimally for both "puth to one side" and "push to both sides" strategy
    * facts of bidirectional usage should be collected in a bit during this phase - they would be needed
   * after table is once allocated this mode is never used, because usage strategy shows that table was required and data about bidirectinal usage is collected.
+  * after-end iteartor for no-table-pointer mode must have element address that is different from all present elements. So if it points immediately after block - it must have a special blockid and element pointer pointing immediately after two allocatde blocks
  * plain table adressing
+  * never used for iterators pointing to max blocks, because tey need consult table to check for roundtripping.
   * used unntil first roundtrip-after queue usage occured
-  * to be able switch from plain adressing to another mode we need to mark entire table as "initially ubused". To do it we pass special "need to zero memory" parameter.
+  * to be able switch from plain adressing to another mode we need to mark entire table as "initially ubused". To do it we pass special "need to zero memory" parameter to allocator. Allocator can implement zeroing without cache polluting.
  * no plain table addressing
+  * many bits are required to store info. So they must be placed into block where adress has not-so much significant bits, but better to place it in the same chache line as first table pointers. 8-th pointer seems a good candidate. Cache way-ness is't got worse here because first table pointers are going to be read anyway.
 * design of distance and advance operations
  * each iterator contains info about block size, so for both diff and advance operations we can say if they involves more than one block
   * if only one block is involved - use simplest arithmetic without any table access.
@@ -69,12 +72,12 @@ Provide a container that would be like a std::vector suitable as "default contai
    * if iteartor is in "no-table-pointer" mode, a field-near-first block is consulted.
     * if table exists iterator is upgraded to current mode.
 	 * otherwise advance is calculated with assumption that requested block exists.
-	* if iterator  "plain table adressing" bit set calculate target table position and read it.
+	* if iterator "plain table adressing" bit set calculate target table position and read it.
 	 * if table position is not filled (initially zeroed, or marked as unused/freed) upgrade to "no plain adressing" mode
 	* for non-plain-addressing table is consulted first time to get current adressing mode and second time to load pointer to allocated block.
   * so for iterators with table pointer two techincal bits are used:
    * bit describing if plain adressing mode should be tried
-   * (there was idea to have a bit that can be used to determine if distance should be calculated over zero or ovre max but this can be solved by size limiting)
+   * (there was idea to have a bit that can be used to determine if distance should be calculated over zero or ovre max but this can be solved by size limiting and using non-plain for max-size blocks)
 * memory free strategy
  * it's a bad idea to free block immediately after it become unused because there is high chance it would be used again
  * it's a bad idea to check about freeing blocks too often
@@ -95,6 +98,7 @@ Provide a container that would be like a std::vector suitable as "default contai
   * be traditional, look how tgis is implemented in existing containers
    * all current deques limiting the size in term of bytes
    * gcc std vector uses 1 as min size.
+* suggested log2 block sizes - example for 32-entry table (sum of max blocks sizes is 2 ^ 28 ): 5 (min block, allocated initially two blocks in one mem region), 7,7,7, 9,9,9, 11,11,11 ..., 23, 23, 23, 25,25,25,25
 
 ### Use case analysis
 
@@ -107,6 +111,8 @@ It would allow very fast (direct address) access to element, random access to el
 And random access to element in another block with single extra lookup into table (like vector).
 There would be a bit more address calculations but they expected to be trivial.
 * for allow using in different scenarious the object must be move-assignable(C)/move-constructible(C++). So no internal pointers to main object is allowed.
+* iterating all container non-changed part while container is modified.
+* iterating container while it is not modified. Does not requires stable iterators, so may be implemented a bit more efficiently, for example by using contigous blocks of memory.
 
 ### External API, "kernel" API
 * C header declaring functions that gets extra argument with structure. Gives possibilyty to integrate into core of other projects.

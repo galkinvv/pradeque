@@ -7,7 +7,7 @@ ifndef CC_FORCXX
 	CC_FORCXX=gcc-4.8
 endif
 ifndef OPTIMIZE
-	OPTIMIZE = 0
+	OPTIMIZE = 1
 endif
 ifndef BUILDDIR
 	BUILDDIR = build

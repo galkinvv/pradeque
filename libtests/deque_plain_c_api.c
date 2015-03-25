@@ -7,7 +7,9 @@ int count_errors_in_pradeque_plain_c_api()
 	pradeque_params_t my3chars_deque_params = pradeque_prepare_params(sizeof(my3chars));
 	pradeque_t d = {};
 	pradeque_clear(&d, &my3chars_deque_params, pradeque_deallocator_default);
-	return 0;
+	int error_count = 0;
+	error_count += my3chars_deque_params.max_size <= 0;
+	return error_count;
 }
 
 //inline implementation is included after all calls to be sure that they are compilable without it

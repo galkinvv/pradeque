@@ -1,5 +1,4 @@
 #include "pradeque.hpp"
-#include "pradeque-inl.h"
 #include <gtest/gtest.h>
 #include <cstdint>
 #include <type_traits>

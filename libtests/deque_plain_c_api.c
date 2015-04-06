@@ -1,6 +1,7 @@
 #include "pradeque.h"
 typedef char my3chars[3];
 
+const int a = (int x =3);
 int count_errors_in_pradeque_plain_c_api()
 {
 	//TODO: make this static. so pradeque_prepare_params must become macro...
@@ -11,6 +12,3 @@ int count_errors_in_pradeque_plain_c_api()
 	error_count += my3chars_deque_params.max_size <= 0;
 	return error_count;
 }
-
-//inline implementation is included after all calls to be sure that they are compilable without it
-#include "pradeque-inl.h"

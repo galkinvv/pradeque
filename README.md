@@ -117,6 +117,11 @@ There would be a bit more address calculations but they expected to be trivial.
 ### External API, "kernel" API
 * C header declaring functions that gets extra argument with structure. Gives possibilyty to integrate into core of other projects.
  * Effeciency for basic "kernel" API is more importsant than simplicity of use. More simple API can be built over efficient API but not the other way.
+ * Header-only implementation, since the functions without inlining are going to be too slow
+ * Simple functions must be inlined, linkage of not so simple functions should ensure that same code would not be duplicated, but different code versions would not be combined bya linker
+  * So public API must be static inline simple wrappers
+  * And inner more complex must functions declared with version embedded in their names
+  * linkage of types is not bothered(while compiling C++ with type_info)
  * "Kernel" must allow efficient implementations of operations on multiple elements, for example by allowing iteration by sequential groups.
   * all provided operations should operate in terms of iterating of contigous mem blocks.
    * the exception are operations that can be more efficiently computed without pre-contigous block iteration used even internally

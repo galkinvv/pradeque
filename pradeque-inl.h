@@ -7,21 +7,21 @@
 #include <assert.h>
 #include <limits.h>
 
-#define PRA_DEQUE_DETAIL_EMPTY
-#define PRA_DEQUE_DETAIL_DEFER(id) id PRA_DEQUE_DETAIL_EMPTY
-#define PRA_DEQUE_DETAIL_EXPAND(id) id
+#define PRA_DEQUE_EMPTY_DETAILV1
+#define PRA_DEQUE_DETAIL_DEFER_DETAILV1(id) id PRA_DEQUE_EMPTY_DETAILV1
+#define PRA_DEQUE_DETAIL_EXPAND_DETAILV1(id) id
 
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_WITH_SHIFT(x, half_bits, shift_width) (shift_width + (PRA_DEQUE_DETAIL_DEFER(PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER##half_bits)((x >> shift_width))))
+#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_WITH_SHIFT_DETAILV1(x, half_bits, shift_width) (shift_width + (PRA_DEQUE_DETAIL_DEFER_DETAILV1(PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER##half_bits)((x >> shift_width))))
 
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER(x, half_bits) PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_WITH_SHIFT(x, half_bits, ((x >> half_bits) ? half_bits : 0))
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER2(x)  x>>1
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER4(x)  PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER(x,2)
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER8(x)  PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER(x,4)
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER16(x) PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER(x,8)
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER32(x) PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER(x,16)
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER64(x) PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER(x,32)
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT32(x) (PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER32(((uint32_t)(x))))))))
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT64(x) (PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_EXPAND(PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER64(((uint64_t)(x)))))))))
+#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_DETAILV1(x, half_bits) PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_WITH_SHIFT_DETAILV1(x, half_bits, ((x >> half_bits) ? half_bits : 0))
+#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER2_DETAILV1(x)  x>>1
+#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER4_DETAILV1(x)  PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_DETAILV1(x,2)
+#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER8_DETAILV1(x)  PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_DETAILV1(x,4)
+#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER16_DETAILV1(x) PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_DETAILV1(x,8)
+#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER32_DETAILV1(x) PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_DETAILV1(x,16)
+#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER64_DETAILV1(x) PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_DETAILV1(x,32)
+#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT32_DETAILV1(x) (PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER32_DETAILV1(((uint32_t)(x))))))))
+#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT64_DETAILV1(x) (PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER64_DETAILV1(((uint64_t)(x)))))))))
 
 enum{
 
@@ -36,14 +36,14 @@ kPradequeDetailAddressBits = sizeof(void*) * CHAR_BIT,
 //so 6 bit is enough for 32 bit case.
 //for doubling/halfing adddress space with the formula adds/subtracts a bit. This give nice result for current 64-bit systems (allowing up to 2^48 sizes) and meaningful result for 16 and 128 bit systems, so it looks good.
 
-kPradequeDetailFullTableIndexBits = PRA_DEQUE_DETAIL_LOWER_LOG2_UINT32(kPradequeDetailAddressBits) + 1,
+kPradequeDetailFullTableIndexBits = PRA_DEQUE_DETAIL_LOWER_LOG2_UINT32_DETAILV1(kPradequeDetailAddressBits) + 1,
 
 kPradequeDetailHalfTableSize = 1 << (kPradequeDetailFullTableIndexBits - 1),
 kPradequeDetailHalfTableSmallSpecialEntries = 1, //count of first element that does not correspond to standard size calculating formula.
 kPradequeDetailHalfTableBigDupEntries = 4, //count of end entries with identical size.
 //bits in table pointer containing mode info
 kPradequeDetailBitsInTablePointerForModeDirection = 1, //backward or forward
-kPradequeDetailBitsInTablePointerForModeShift = 2 + PRA_DEQUE_DETAIL_LOWER_LOG2_UINT32(kPradequeDetailHalfTableBigDupEntries - 1), //on both table sides there are 4*2 = 8 max blocks, they can be shifted by any value.
+kPradequeDetailBitsInTablePointerForModeShift = 2 + PRA_DEQUE_DETAIL_LOWER_LOG2_UINT32_DETAILV1(kPradequeDetailHalfTableBigDupEntries - 1), //on both table sides there are 4*2 = 8 max blocks, they can be shifted by any value.
 kPradequeDetailBitsInTablePointerForLastBigBlock = kPradequeDetailBitsInTablePointerForModeShift, //to be able calculate whether big blocks belong to pre-zero or to post-zero part.
 //bits in every table pointer
 kPradequeDetailBitsInEveryTablePointer = 2, //four possible values: not allocated, allocated but unused, used with plain address mode, used with non-plain address mode
@@ -60,30 +60,30 @@ kPradequeDetailHalfTableGroupedBy3Entries = (kPradequeDetailHalfTableSize - kPra
 kPradequeDetailLog2DiffBetweenSmallAndBigBlocks = 2 * (kPradequeDetailHalfTableGroupedBy3Entries - 1) + 2 + 2,//first +2 is for small->standard, second +2 is for standard->big
 };
 
-//utility functions
+//utility functions - non-static functions
 
-static inline int praDequeDetail_LowerLog2(uintptr_t i)
+inline int praDequeDetail_LowerLog2(uintptr_t i)
 {
    return PRA_DEQUE_DETAIL_LOWER_LOG2_UINT64(i);
 }
 
-static inline int praDequeDetail_UpperLog2(uintptr_t i)
+inline int praDequeDetail_UpperLog2(uintptr_t i)
 {
    return (i <= 1) ? 0 : 1 + praDequeDetail_LowerLog2(i - 1);
 }
 
-static inline uintptr_t praDequeDetail_PackedExtraMask(int extra_bits)
+inline uintptr_t praDequeDetail_PackedExtraMask(int extra_bits)
 {
     assert(extra_bits > 0);
     return ((uintptr_t)1 << extra_bits) - 1;
 }
 
-static inline uintptr_t praDequeDetail_PackedGetMainBeingMultiple(uintptr_t packed, int extra_bits)
+inline uintptr_t praDequeDetail_PackedGetMainBeingMultiple(uintptr_t packed, int extra_bits)
 {
     return (packed & ~praDequeDetail_PackedExtraMask(extra_bits));
 }
 
-static inline uintptr_t praDequeDetail_PackedSetMainBeingMultiple(uintptr_t main_being_multiple, uintptr_t packed, int extra_bits)
+inline uintptr_t praDequeDetail_PackedSetMainBeingMultiple(uintptr_t main_being_multiple, uintptr_t packed, int extra_bits)
 {
     assert(!(main_being_multiple & praDequeDetail_PackedExtraMask(extra_bits)));
     return main_being_multiple | (praDequeDetail_PackedExtraMask(extra_bits) & packed);//keep extra but change main
@@ -91,13 +91,13 @@ static inline uintptr_t praDequeDetail_PackedSetMainBeingMultiple(uintptr_t main
 
 //domain functions
 //return bit limitation of maximal size calculating maximal how much objects of size rounded up to next power of two can be placed in half of address space
-static inline int praDequeDetail_MaxSizeBitsUpToDeg2InHalfAddressSpace(size_t value_size)
+inline int praDequeDetail_MaxSizeBitsUpToDeg2InHalfAddressSpace(size_t value_size)
 {
     return kPradequeDetailAddressBits - 1 - praDequeDetail_UpperLog2(value_size);
 }
 
 //Calculates log2 of entries count in small block
-static inline int praDequeDetail_SmallBlockEntriesLog2(size_t value_size, size_t size_aligned_bits)
+inline int praDequeDetail_SmallBlockEntriesLog2(size_t value_size, size_t size_aligned_bits)
 {
     const int min_entries_to_fill_optimal_bytes = kPradequeDetailFirstAllocationMinOptimalBytes / (value_size * 2); //mul by 2 corresponds to initialy allocating 2 blocks
 	const int min_entries_to_fill_optimal_bytes_log2 = praDequeDetail_LowerLog2(min_entries_to_fill_optimal_bytes);
@@ -105,16 +105,10 @@ static inline int praDequeDetail_SmallBlockEntriesLog2(size_t value_size, size_t
     return min_entries_to_fill_optimal_bytes_log2 > min_log2_to_achieve_align ? min_entries_to_fill_optimal_bytes_log2 : min_log2_to_achieve_align;
 }
 
-//API implementation
-#ifndef PRA_DEQUE_DETAIL_API
-#define PRA_DEQUE_DETAIL_API inline
-#endif
+//API implementation - static inline functions
+static inline void pradeque_clear(pradeque_t* deque, pradeque_params_t* params, pradeque_deallocator_t deallocator){/*TODO*/}
 
-PRA_DEQUE_DETAIL_API
-void pradeque_clear(pradeque_t* deque, pradeque_params_t* params, pradeque_deallocator_t deallocator){/*TODO*/}
-
-PRA_DEQUE_DETAIL_API
-pradeque_params_t pradeque_prepare_params(size_t value_size)
+static inline pradeque_params_t pradeque_prepare_params(size_t value_size)
 {
 	assert(value_size);
 	int size_aligned_bits = 0;
@@ -138,8 +132,7 @@ pradeque_params_t pradeque_prepare_params(size_t value_size)
 	return params;
 }
 
-PRA_DEQUE_DETAIL_API
-void* pradeque_allocator_default(size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context)
+static inline void* pradeque_allocator_default(size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context)
 {
 	assert(size);
 	assert(alignment);
@@ -155,8 +148,7 @@ void* pradeque_allocator_default(size_t alignment, size_t size, int zero_on_allo
 	return result;
 }
 
-PRA_DEQUE_DETAIL_API
-void pradeque_deallocator_default(void *block, size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context)
+static inline void pradeque_deallocator_default(void *block, size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context)
 {
 	assert(block);
 	assert(size);

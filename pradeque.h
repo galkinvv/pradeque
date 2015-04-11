@@ -1,7 +1,7 @@
 #pragma once
 #include <stddef.h>
 #include <stdint.h>
-typedef struct
+typedef struct pradeque_iterator_detailV1
 {
     void* value;//points to value stored in container. Can be NULL only for past-the-end iterator pointing to yet-not-allocated table
 	uintptr_t table_entry_id;
@@ -13,7 +13,7 @@ typedef struct
 }
 pradeque_iterator_t;
 
-typedef struct
+typedef struct pradeque_contigous_block_iteration_detailV1
 {
     pradeque_iterator_t first; //points to first element of contigous block
 	void *post_last;//points after last element of contigous block
@@ -26,7 +26,9 @@ typedef struct
 	pradeque_contigous_block_iteration_t iteration;
 }pradeque_pop_iteration_t;//tiny wrapper to protect from misusing generic iteration_t object in pop operations
 
-typedef struct
+struct pradeque_detailV1;
+typedef struct pradeque_detailV1 pradeque_t;
+struct pradeque_detailV1
 {
    struct {
 	   void *first;
@@ -35,7 +37,7 @@ typedef struct
 	   //when becomes empty the table pointer is stored instead of first logical index
 
 	   pradeque_iterator_t post_last;
-   } detail; //pradeque_t details are not part of API
+   } detailV1; //pradeque_t details are not part of API
 }
 pradeque_t;
 
@@ -49,12 +51,12 @@ typedef struct
 		int small_block_entries_log2;//log2 of entries count in small block
 		size_t odd_value_size;//and odd number
 		intptr_t odd_mul_to_get_1_mod_max_block; //Bezout coefficient for odd_value_size and max block size. Needed for calculation the block range from any inner block pointer.
-	}detail;
+	}detailV1;
 }
 pradeque_params_t;
 
 
-#define PRADEQUE_PREPARED_PARAMS(size_t__value_size) { PRA_DEQUE_DETAIL__PREPARED_PARAMS(((size_t)(size_t__value_size)) /*generates comma-separated initializers*/}
+#define PRADEQUE_PREPARED_PARAMS(size_t__value_size) { PRADEQUE_PREPARED_PARAMS_DETAILV1(((size_t)(size_t__value_size)) /*generates comma-separated initializers*/}
 //object instances are always aligned to the greatest power of 2 dividing value_size
 //gets single parameter: value_size of type size_t
 //this must be done in compile time.

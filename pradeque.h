@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PRADEQUE_VERSION
+#define PRADEQUE_VERSION 1
 #include <stddef.h>
 #include <stdint.h>
 typedef struct pradeque_iterator_detailV1
@@ -28,18 +29,6 @@ typedef struct
 
 struct pradeque_detailV1;
 typedef struct pradeque_detailV1 pradeque_t;
-struct pradeque_detailV1
-{
-   struct {
-	   void *first;
-	   uintptr_t first_logical_index_packed_with_flags;
-	   //stores first logical index and differnt flags describing container usage: current addressing mode constants, bidirectional usage presence, ...
-	   //when becomes empty the table pointer is stored instead of first logical index
-
-	   pradeque_iterator_t post_last;
-   } detailV1; //pradeque_t details are not part of API
-}
-pradeque_t;
 
 typedef struct
 {
@@ -98,3 +87,8 @@ static void pradeque_clear(pradeque_t* deque, pradeque_params_t* params, pradequ
 
 //inline implementation is included after all declaration to be sure that they are compilable without it
 #include "pradeque-inl.h"
+#else
+#if PRADEQUE_VERSION != 1
+#error pradeque.h with another version PRADEQUE_VERSION is already included. This is no suppored for single compilation module.
+#endif
+#endif

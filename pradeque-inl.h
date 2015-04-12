@@ -1,5 +1,7 @@
-#pragma once
-#include "pradeque.h"
+#if PRADEQUE_VERSION != 1
+#error This file must be includede only indirectly from pradeque.h of correspodning version
+#endif
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,25 +9,33 @@
 #include <assert.h>
 #include <limits.h>
 
-#define PRA_DEQUE_EMPTY_DETAILV1
-#define PRA_DEQUE_DETAIL_DEFER_DETAILV1(id) id PRA_DEQUE_EMPTY_DETAILV1
-#define PRA_DEQUE_DETAIL_EXPAND_DETAILV1(id) id
+//The followin operations are needed as macro: lower log2, solve diofantine equation Y*2**constN + A*X = 1, find max degree of two that divides number.
+//Lower log 2 as a macro implementation
+#define PRA_DEQUE_LOG2_COMBINE_SUBRESULTS_DETAILV1(log2_xlow, log2_xhigh, x, halfxbits) ((x >> halfxbits) ? log2_xhigh + halfxbits : log2_xlow )
+#define PRA_DEQUE_LOWER_LOG2_x02_DETAILV1(x) (x>>1)
+#define PRA_DEQUE_LOWER_LOG2_x04_DETAILV1(x) PRA_DEQUE_LOG2_COMBINE_SUBRESULTS_DETAILV1(PRA_DEQUE_LOWER_LOG2_x02_DETAILV1((x & 0x0000000000000003ull)), PRA_DEQUE_LOWER_LOG2_x02_DETAILV1((x >> 0x02)), x, 0x02)
+#define PRA_DEQUE_LOWER_LOG2_x08_DETAILV1(x) PRA_DEQUE_LOG2_COMBINE_SUBRESULTS_DETAILV1(PRA_DEQUE_LOWER_LOG2_x04_DETAILV1((x & 0x000000000000000Full)), PRA_DEQUE_LOWER_LOG2_x04_DETAILV1((x >> 0x04)), x, 0x04)
+#define PRA_DEQUE_LOWER_LOG2_x10_DETAILV1(x) PRA_DEQUE_LOG2_COMBINE_SUBRESULTS_DETAILV1(PRA_DEQUE_LOWER_LOG2_x08_DETAILV1((x & 0x00000000000000FFull)), PRA_DEQUE_LOWER_LOG2_x08_DETAILV1((x >> 0x08)), x, 0x08)
+#define PRA_DEQUE_LOWER_LOG2_x20_DETAILV1(x) PRA_DEQUE_LOG2_COMBINE_SUBRESULTS_DETAILV1(PRA_DEQUE_LOWER_LOG2_x10_DETAILV1((x & 0x000000000000FFFFull)), PRA_DEQUE_LOWER_LOG2_x10_DETAILV1((x >> 0x10)), x, 0x10)
+#define PRA_DEQUE_LOWER_LOG2_x40_DETAILV1(x) PRA_DEQUE_LOG2_COMBINE_SUBRESULTS_DETAILV1(PRA_DEQUE_LOWER_LOG2_x20_DETAILV1((x & 0x00000000FFFFFFFFull)), PRA_DEQUE_LOWER_LOG2_x20_DETAILV1((x >> 0x20)), x, 0x20)
 
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_WITH_SHIFT_DETAILV1(x, half_bits, shift_width) (shift_width + (PRA_DEQUE_DETAIL_DEFER_DETAILV1(PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER##half_bits)((x >> shift_width))))
+#define PRA_DEQUE_LOWER_LOG2_UINT64_DETAILV1(x) (PRA_DEQUE_LOWER_LOG2_x40_DETAILV1((uint64_t)(x)))
 
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_DETAILV1(x, half_bits) PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_WITH_SHIFT_DETAILV1(x, half_bits, ((x >> half_bits) ? half_bits : 0))
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER2_DETAILV1(x)  x>>1
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER4_DETAILV1(x)  PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_DETAILV1(x,2)
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER8_DETAILV1(x)  PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_DETAILV1(x,4)
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER16_DETAILV1(x) PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_DETAILV1(x,8)
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER32_DETAILV1(x) PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_DETAILV1(x,16)
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER64_DETAILV1(x) PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER_DETAILV1(x,32)
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT32_DETAILV1(x) (PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER32_DETAILV1(((uint32_t)(x))))))))
-#define PRA_DEQUE_DETAIL_LOWER_LOG2_UINT64_DETAILV1(x) (PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_EXPAND_DETAILV1(PRA_DEQUE_DETAIL_LOWER_LOG2_UINT_HELPER64_DETAILV1(((uint64_t)(x)))))))))
+struct pradeque_detailV1
+{
+   struct {
+	   void *first;
+	   uintptr_t first_logical_index_packed_with_flags;
+	   //stores first logical index and differnt flags describing container usage: current addressing mode constants, bidirectional usage presence, ...
+	   //when becomes empty the table pointer is stored instead of first logical index
+
+	   pradeque_iterator_t post_last;
+   } detailV1; //pradeque_t details are not part of API
+};
 
 enum{
 
-kPradequeDetailPointerAlign = PRA_DEQUE_DETAIL_LOWER_LOG2_UINT32(sizeof(void*)),
+kPradequeDetailPointerAlign = PRA_DEQUE_LOWER_LOG2_UINT64_DETAILV1(sizeof(void*)),
 kPradequeDetailAddressBits = sizeof(void*) * CHAR_BIT,
 
 //count of bits required to adress element in a table of block entries
@@ -36,14 +46,14 @@ kPradequeDetailAddressBits = sizeof(void*) * CHAR_BIT,
 //so 6 bit is enough for 32 bit case.
 //for doubling/halfing adddress space with the formula adds/subtracts a bit. This give nice result for current 64-bit systems (allowing up to 2^48 sizes) and meaningful result for 16 and 128 bit systems, so it looks good.
 
-kPradequeDetailFullTableIndexBits = PRA_DEQUE_DETAIL_LOWER_LOG2_UINT32_DETAILV1(kPradequeDetailAddressBits) + 1,
+kPradequeDetailFullTableIndexBits = PRA_DEQUE_LOWER_LOG2_UINT64_DETAILV1(kPradequeDetailAddressBits) + 1,
 
 kPradequeDetailHalfTableSize = 1 << (kPradequeDetailFullTableIndexBits - 1),
 kPradequeDetailHalfTableSmallSpecialEntries = 1, //count of first element that does not correspond to standard size calculating formula.
 kPradequeDetailHalfTableBigDupEntries = 4, //count of end entries with identical size.
 //bits in table pointer containing mode info
 kPradequeDetailBitsInTablePointerForModeDirection = 1, //backward or forward
-kPradequeDetailBitsInTablePointerForModeShift = 2 + PRA_DEQUE_DETAIL_LOWER_LOG2_UINT32_DETAILV1(kPradequeDetailHalfTableBigDupEntries - 1), //on both table sides there are 4*2 = 8 max blocks, they can be shifted by any value.
+kPradequeDetailBitsInTablePointerForModeShift = 2 + PRA_DEQUE_LOWER_LOG2_UINT64_DETAILV1(kPradequeDetailHalfTableBigDupEntries - 1), //on both table sides there are 4*2 = 8 max blocks, they can be shifted by any value.
 kPradequeDetailBitsInTablePointerForLastBigBlock = kPradequeDetailBitsInTablePointerForModeShift, //to be able calculate whether big blocks belong to pre-zero or to post-zero part.
 //bits in every table pointer
 kPradequeDetailBitsInEveryTablePointer = 2, //four possible values: not allocated, allocated but unused, used with plain address mode, used with non-plain address mode
@@ -64,7 +74,7 @@ kPradequeDetailLog2DiffBetweenSmallAndBigBlocks = 2 * (kPradequeDetailHalfTableG
 
 inline int praDequeDetail_LowerLog2(uintptr_t i)
 {
-   return PRA_DEQUE_DETAIL_LOWER_LOG2_UINT64(i);
+   return PRA_DEQUE_LOWER_LOG2_UINT64_DETAILV1(i);
 }
 
 inline int praDequeDetail_UpperLog2(uintptr_t i)

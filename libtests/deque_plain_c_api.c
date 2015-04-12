@@ -1,7 +1,6 @@
 #include "pradeque.h"
 typedef char my3chars[3];
 
-const int a = (int x =3);
 int count_errors_in_pradeque_plain_c_api()
 {
 	//TODO: make this static. so pradeque_prepare_params must become macro...

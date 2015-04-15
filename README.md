@@ -126,6 +126,7 @@ There would be a bit more address calculations but they expected to be trivial.
   * all provided operations should operate in terms of iterating of contigous mem blocks.
    * the exception are operations that can be more efficiently computed without pre-contigous block iteration used even internally
 * C++11 header with high stdlib compatibility
+* Ensure headears are warning-free for hhigh warning levels
 * common code
  * so C++ version have to be wrapper around C passing const parameters generated from template arguments
 auto-generating wrapping extra parameter

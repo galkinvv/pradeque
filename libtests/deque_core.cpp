@@ -139,3 +139,49 @@ TEST(zero_count, macro_64_direct_operation_priority)
 	EXPECT_EQ(-PRA_DEQUE_LOW_ZEROES_UINT64_DETAILV1(0x80), -7);
 }
 
+
+template <uint64_t tValue>
+struct DSolve
+{
+	static const uint64_t kSolution = PRA_DEQUE_DIOFANTEINE_SOLVE_UINT64_DETAILV1(tValue);
+	static uint64_t Solution(){return kSolution;}
+};
+
+bool checkCorrectDiofantioanSolution(uint64_t value, uint64_t solution)
+{
+	return (solution * value) == ((uint64_t)1);
+};
+bool checkCorrectDiofantioanSolving(uint64_t value)
+{
+	return checkCorrectDiofantioanSolution(value, PRA_DEQUE_DIOFANTEINE_SOLVE_UINT64_DETAILV1(value));
+};
+
+TEST(diofantiane_solve, func_via_class)
+{
+    EXPECT_EQ(DSolve<  1>::Solution(), 1);
+    EXPECT_EQ(DSolve<  3>::Solution(),0xaaaaaaaaaaaaaaabULL);
+	EXPECT_PRED1(checkCorrectDiofantioanSolving, 5);
+	EXPECT_PRED1(checkCorrectDiofantioanSolving, 7);
+	EXPECT_PRED1(checkCorrectDiofantioanSolving, 9);
+	EXPECT_PRED1(checkCorrectDiofantioanSolving, 11);
+	EXPECT_PRED1(checkCorrectDiofantioanSolving, 13);
+	EXPECT_PRED1(checkCorrectDiofantioanSolving, 15);
+	EXPECT_PRED1(checkCorrectDiofantioanSolving, 17);
+}
+
+TEST(diofantiane_solve, macro_64_direct_big_values)
+{
+	EXPECT_PRED2(checkCorrectDiofantioanSolution, PRA_DEQUE_DIOFANTEINE_SOLVE_UINT64_DETAILV1(0xFFFFFFF), 0xFFFFFFF);
+	EXPECT_PRED2(checkCorrectDiofantioanSolution, PRA_DEQUE_DIOFANTEINE_SOLVE_UINT64_DETAILV1(0x8000001), 0x8000001);
+	EXPECT_PRED2(checkCorrectDiofantioanSolution, PRA_DEQUE_DIOFANTEINE_SOLVE_UINT64_DETAILV1(0x80000001ull), 0x80000001ull);
+	EXPECT_PRED2(checkCorrectDiofantioanSolution, PRA_DEQUE_DIOFANTEINE_SOLVE_UINT64_DETAILV1(0x7FFFFFFFFFFFFFFFll), 0x7FFFFFFFFFFFFFFFll);
+	EXPECT_PRED2(checkCorrectDiofantioanSolution, PRA_DEQUE_DIOFANTEINE_SOLVE_UINT64_DETAILV1(0x8000000000000001ull), 0x8000000000000001ull);
+	EXPECT_PRED2(checkCorrectDiofantioanSolution, PRA_DEQUE_DIOFANTEINE_SOLVE_UINT64_DETAILV1(0xFFFFFFFFFFFFFFFFll), 0xFFFFFFFFFFFFFFFFll);
+}
+
+TEST(diofantiane_solve, macro_64_direct_operation_priority)
+{
+	EXPECT_EQ(PRA_DEQUE_DIOFANTEINE_SOLVE_UINT64_DETAILV1(2000 ? 3 : 2000), 0xaaaaaaaaaaaaaaabULL);
+	EXPECT_EQ(~PRA_DEQUE_DIOFANTEINE_SOLVE_UINT64_DETAILV1(3), ~0xaaaaaaaaaaaaaaabULL);
+}
+

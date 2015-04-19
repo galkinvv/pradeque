@@ -107,7 +107,7 @@ kPradequeDetailLog2DiffBetweenSmallAndBigBlocks = 2 * (kPradequeDetailHalfTableG
 kPradequeDetailLog2DiffBetweenSmallBlocksAndMaxSize = kPradequeDetailLog2DiffBetweenSmallAndBigBlocks + PRA_DEQUE_LOWER_LOG2_UINT64_DETAILV1(kPradequeDetailHalfTableBigDupEntries) + 1,//log2 of element count that can be placed in big blocks in table. +1 corresponds to table consisting of two halves.
 
 kPradequeDetailLog2MaxContigousArraySize = sizeof(size_t) * CHAR_BIT,
-kPradequeDetailLog2MaxContigousArraysForValueSize1 = kPradequeDetailLog2MaxContigousArraySize + PRA_DEQUE_LOWER_LOG2_UINT64_DETAILV1(kPradequeDetailHalfTableBigDupEntries) + 1,
+kPradequeDetailLog2MaxContigousArraysForValueSize1 = PRA_DEQUE_MIN_DETAILV1(kPradequeDetailAddressBits -1, kPradequeDetailLog2MaxContigousArraySize + PRA_DEQUE_LOWER_LOG2_UINT64_DETAILV1(kPradequeDetailHalfTableBigDupEntries) + 1),
 //minimize count of elements if first block but get required alignment
 kPradequeDetailLog2MaxAddressedElementsForValueAligned1 = kPradequeDetailLog2DiffBetweenSmallBlocksAndMaxSize + kPradequeDetailMinBlockAlign,
 };

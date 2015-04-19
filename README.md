@@ -99,6 +99,7 @@ Provide a container that would be like a std::vector suitable as "default contai
    * all current deques limiting the size in term of bytes
    * gcc std vector uses 1 as min size.
 * suggested log2 block sizes - example for 32-entry table (sum of max blocks sizes is 2 ^ 28 ): 5 (min block, allocated initially two blocks in one mem region), 7,7,7, 9,9,9, 11,11,11 ..., 23, 23, 23, 25,25,25,25
+* log2 fields in params_t can be copactified by :8 bit width specifiction
 
 ### Use case analysis
 

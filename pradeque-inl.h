@@ -54,6 +54,9 @@
 
 #define PRA_DEQUE_DIOFANTEINE_SOLVE_UINT64_DETAILV1(x) (PRA_DEQUE_DIOFANTEINE_SOLVE_x40_DETAILV1((uint64_t)(x)))
 
+#define PRA_DEQUE_MIN_DETAILV1(x,y) (((x)<(y))?(x):(y))
+#define PRA_DEQUE_MAX_DETAILV1(x,y) (((x)>(y))?(x):(y))
+
 struct pradeque_detailV1
 {
    struct {
@@ -94,13 +97,19 @@ kPradequeDetailBitsInSpecialTablePointer = kPradequeDetailBitsInEveryTablePointe
 kPradequeDetailSpecialTablePointerPosition = 8, //shares the same cache line with table start and is expected to store quite big block
 kPradequeDetailBlockAlignForNoTableMode = 1 + kPradequeDetailPointerAlign, //to store pointer pointer we need at least pointer size. Half-block is allocated for system information, so the block must have one more align.
 kPradequeDetailMinBlockAlignToFitSpecial = kPradequeDetailBitsInSpecialTablePointer - 2 - ((kPradequeDetailSpecialTablePointerPosition - 2) / 3) * 2,//number of entirely fitted 3-same-block table entries.
-kPradequeDetailMinBlockAlignToFitTableBits = kPradequeDetailMinBlockAlignToFitSpecial > kPradequeDetailBitsInEveryTablePointer ? kPradequeDetailMinBlockAlignToFitSpecial : kPradequeDetailBitsInEveryTablePointer, 
-kPradequeDetailMinBlockAlign = kPradequeDetailBlockAlignForNoTableMode > kPradequeDetailMinBlockAlignToFitTableBits ? kPradequeDetailBlockAlignForNoTableMode : kPradequeDetailMinBlockAlignToFitTableBits, 
+kPradequeDetailMinBlockAlignToFitTableBits = PRA_DEQUE_MAX_DETAILV1(kPradequeDetailMinBlockAlignToFitSpecial, kPradequeDetailBitsInEveryTablePointer),
+kPradequeDetailMinBlockAlign = PRA_DEQUE_MAX_DETAILV1(kPradequeDetailBlockAlignForNoTableMode, kPradequeDetailMinBlockAlignToFitTableBits),
 kPradequeDetailFirstAllocationMinOptimalBytes = 64, //byte count being optimal for first allocation. Taken as one cache line. gcc std deque uses 512.
 
 //table size defines the relation between smallest and biggesst arrays.
 kPradequeDetailHalfTableGroupedBy3Entries = (kPradequeDetailHalfTableSize - kPradequeDetailHalfTableSmallSpecialEntries - kPradequeDetailHalfTableBigDupEntries) / 3,
 kPradequeDetailLog2DiffBetweenSmallAndBigBlocks = 2 * (kPradequeDetailHalfTableGroupedBy3Entries - 1) + 2 + 2,//first +2 is for small->standard, second +2 is for standard->big
+kPradequeDetailLog2DiffBetweenSmallBlocksAndMaxSize = kPradequeDetailLog2DiffBetweenSmallAndBigBlocks + PRA_DEQUE_LOWER_LOG2_UINT64_DETAILV1(kPradequeDetailHalfTableBigDupEntries) + 1,//log2 of element count that can be placed in big blocks in table. +1 corresponds to table consisting of two halves.
+
+kPradequeDetailLog2MaxContigousArraySize = sizeof(size_t) * CHAR_BIT,
+kPradequeDetailLog2MaxContigousArraysForValueSize1 = kPradequeDetailLog2MaxContigousArraySize + PRA_DEQUE_LOWER_LOG2_UINT64_DETAILV1(kPradequeDetailHalfTableBigDupEntries) + 1,
+//minimize count of elements if first block but get required alignment
+kPradequeDetailLog2MaxAddressedElementsForValueAligned1 = kPradequeDetailLog2DiffBetweenSmallBlocksAndMaxSize + kPradequeDetailMinBlockAlign,
 };
 
 //utility functions - non-static functions
@@ -139,18 +148,22 @@ inline int praDequeDetail_MaxSizeBitsUpToDeg2InHalfAddressSpace(size_t value_siz
     return kPradequeDetailAddressBits - 1 - praDequeDetail_UpperLog2(value_size);
 }
 
-//Calculates log2 of entries count in small block
-inline int praDequeDetail_SmallBlockEntriesLog2(size_t value_size, size_t size_aligned_bits)
-{
-    const int min_entries_to_fill_optimal_bytes = kPradequeDetailFirstAllocationMinOptimalBytes / (value_size * 2); //mul by 2 corresponds to initialy allocating 2 blocks
-	const int min_entries_to_fill_optimal_bytes_log2 = praDequeDetail_LowerLog2(min_entries_to_fill_optimal_bytes);
-	const int min_log2_to_achieve_align = kPradequeDetailMinBlockAlign - size_aligned_bits;
-    return min_entries_to_fill_optimal_bytes_log2 > min_log2_to_achieve_align ? min_entries_to_fill_optimal_bytes_log2 : min_log2_to_achieve_align;
-}
 
-//API implementation - static inline functions
+//API implementation - functions are static inline to workaround conflicts of different versions
+#define PRADEQUE_PREPARED_PARAMS_DETAILV1(size_t__value_size) \
+/*size_t value_size*/ size_t__value_size, \
+/*intptr_t max_size_log2=  min(max allocatable array for upper log2 of value size, max adressable by table array for value alignment)*/ PRA_DEQUE_MIN_DETAILV1( \
+	kPradequeDetailLog2MaxContigousArraysForValueSize1 - (size_t__value_size ==1 ? 0 : (PRA_DEQUE_LOWER_LOG2_UINT64_DETAILV1(size_t__value_size -1)+1)), \
+	kPradequeDetailLog2MaxAddressedElementsForValueAligned1 - PRA_DEQUE_MIN_DETAILV1(PRA_DEQUE_LOW_ZEROES_UINT64_DETAILV1(size_t__value_size), kPradequeDetailMinBlockAlign) \
+),{ \
+/*int size_aligned_bits*/PRA_DEQUE_LOW_ZEROES_UINT64_DETAILV1(size_t__value_size), \
+/*int small_block_entries_log2*/PRA_DEQUE_MAX_DETAILV1(kPradequeDetailMinBlockAlign - PRA_DEQUE_LOW_ZEROES_UINT64_DETAILV1(size_t__value_size), 0), \
+/*size_t odd_value_size*/size_t__value_size/(((size_t)1) << PRA_DEQUE_LOW_ZEROES_UINT64_DETAILV1(size_t__value_size)), \
+/*uintptr_t odd_mul_to_get_1_mod_max_block */ PRA_DEQUE_DIOFANTEINE_SOLVE_UINT64_DETAILV1(size_t__value_size/(((size_t)1) << PRA_DEQUE_LOW_ZEROES_UINT64_DETAILV1(size_t__value_size)))}
+
 static inline void pradeque_clear(pradeque_t* deque, pradeque_params_t* params, pradeque_deallocator_t deallocator){/*TODO*/}
 
+/*
 static inline pradeque_params_t pradeque_prepare_params(size_t value_size)
 {
 	assert(value_size);
@@ -174,7 +187,7 @@ static inline pradeque_params_t pradeque_prepare_params(size_t value_size)
 	pradeque_params_t params = {value_size, max_size, {size_aligned_bits, small_block_entries_log2, odd_value_size, odd_mul_to_get_1_mod_max_block}};
 	return params;
 }
-
+*/
 static inline void* pradeque_allocator_default(size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context)
 {
 	assert(size);

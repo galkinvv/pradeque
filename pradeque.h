@@ -33,19 +33,19 @@ typedef struct pradeque_detailV1 pradeque_t;
 typedef struct
 {
     const size_t value_size;//size of values stored in the container. All values are aligned to maximal power of two that divides size
-	const intptr_t max_size;//sizes are expressed in signed types because pradeque does not allow such big sizes that does fit in unsigned types but doesn't fit in unsigned. This is expressed in API as types
+	const int max_size_log2;//sizes are expressed in signed types because pradeque does not allow such big sizes that does fit in unsigned types but doesn't fit in unsigned. This is expressed in API as types
 	const struct
 	{
 		int size_aligned_bits;//size is demultiplied in power of two
 		int small_block_entries_log2;//log2 of entries count in small block
 		size_t odd_value_size;//and odd number
-		intptr_t odd_mul_to_get_1_mod_max_block; //Bezout coefficient for odd_value_size and max block size. Needed for calculation the block range from any inner block pointer.
+		uintptr_t odd_mul_to_get_1_mod_max_block; //Bezout coefficient for odd_value_size and max block size. Needed for calculation the block range from any inner block pointer.
 	}detailV1;
 }
 pradeque_params_t;
 
 
-#define PRADEQUE_PREPARED_PARAMS(size_t__value_size) { PRADEQUE_PREPARED_PARAMS_DETAILV1(((size_t)(size_t__value_size)) /*generates comma-separated initializers*/}
+#define PRADEQUE_PREPARED_PARAMS(size_t__value_size) { PRADEQUE_PREPARED_PARAMS_DETAILV1(((size_t)(size_t__value_size))) /*generates comma-separated initializers*/}
 //object instances are always aligned to the greatest power of 2 dividing value_size
 //gets single parameter: value_size of type size_t
 //this must be done in compile time.

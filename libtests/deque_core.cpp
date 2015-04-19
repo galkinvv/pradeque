@@ -160,6 +160,7 @@ TEST(diofantiane_solve, func_via_class)
 {
     EXPECT_EQ(DSolve<  1>::Solution(), 1);
     EXPECT_EQ(DSolve<  3>::Solution(),0xaaaaaaaaaaaaaaabULL);
+    EXPECT_EQ(DSolve<  5>::Solution(),0xcccccccccccccccdULL);
 	EXPECT_PRED1(checkCorrectDiofantioanSolving, 5);
 	EXPECT_PRED1(checkCorrectDiofantioanSolving, 7);
 	EXPECT_PRED1(checkCorrectDiofantioanSolving, 9);

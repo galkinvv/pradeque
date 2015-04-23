@@ -1,6 +1,7 @@
 #include "pradeque.hpp"
 #include <gtest/gtest.h>
 
+//struct that must be emplaceable in deque
 struct S
 {
     typedef const char cchar1_t[1];
@@ -15,6 +16,6 @@ struct S
 
 TEST(deque_core, cpp_api)
 {
-	typedef PraDeque<S> Deque;
+	//typedef PraDeque<S> Deque;
     S s{""};
 }

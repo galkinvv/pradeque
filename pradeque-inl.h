@@ -152,42 +152,15 @@ inline int praDequeDetail_MaxSizeBitsUpToDeg2InHalfAddressSpace(size_t value_siz
 //API implementation - functions are static inline to workaround conflicts of different versions
 #define PRADEQUE_PREPARED_PARAMS_DETAILV1(size_t__value_size) \
 /*size_t value_size*/ size_t__value_size, \
-/*intptr_t max_size_log2=  min(max allocatable array for upper log2 of value size, max adressable by table array for value alignment)*/ PRA_DEQUE_MIN_DETAILV1( \
+/*int max_size_log2=  min(max allocatable array for upper log2 of value size, max adressable by table array for value alignment)*/ PRA_DEQUE_MIN_DETAILV1( \
 	kPradequeDetailLog2MaxContigousArraysForValueSize1 - (size_t__value_size ==1 ? 0 : (PRA_DEQUE_LOWER_LOG2_UINT64_DETAILV1(size_t__value_size -1)+1)), \
 	kPradequeDetailLog2MaxAddressedElementsForValueAligned1 - PRA_DEQUE_MIN_DETAILV1(PRA_DEQUE_LOW_ZEROES_UINT64_DETAILV1(size_t__value_size), kPradequeDetailMinBlockAlign) \
 ),{ \
 /*int size_aligned_bits*/PRA_DEQUE_LOW_ZEROES_UINT64_DETAILV1(size_t__value_size), \
 /*int small_block_entries_log2*/PRA_DEQUE_MAX_DETAILV1(kPradequeDetailMinBlockAlign - PRA_DEQUE_LOW_ZEROES_UINT64_DETAILV1(size_t__value_size), 0), \
 /*size_t odd_value_size*/size_t__value_size/(((size_t)1) << PRA_DEQUE_LOW_ZEROES_UINT64_DETAILV1(size_t__value_size)), \
-/*uintptr_t odd_mul_to_get_1_mod_max_block */ PRA_DEQUE_DIOFANTEINE_SOLVE_UINT64_DETAILV1(size_t__value_size/(((size_t)1) << PRA_DEQUE_LOW_ZEROES_UINT64_DETAILV1(size_t__value_size)))}
+/*uintptr_t odd_mul_to_get_1_mod_max_block */ (uintptr_t)(PRA_DEQUE_DIOFANTEINE_SOLVE_UINT64_DETAILV1(size_t__value_size/(((size_t)1) << PRA_DEQUE_LOW_ZEROES_UINT64_DETAILV1(size_t__value_size))))}
 
-static inline void pradeque_clear(pradeque_t* deque, pradeque_params_t* params, pradeque_deallocator_t deallocator){/*TODO*/}
-
-/*
-static inline pradeque_params_t pradeque_prepare_params(size_t value_size)
-{
-	assert(value_size);
-	int size_aligned_bits = 0;
-	while(0 == (value_size & ( 1 << size_aligned_bits)))
-	{
-		++size_aligned_bits;
-	}
-	const size_t odd_value_size = value_size / ( 1 << size_aligned_bits);
-	const int small_block_entries_log2 = praDequeDetail_SmallBlockEntriesLog2(value_size, size_aligned_bits);
-
-	//TODO - enable calculation
-	intptr_t odd_mul_to_get_1_mod_max_block = 0; //Bezout coefficient for odd_value_size and max block size. Needed for calculation the block range from any inner block pointer.
-
-    const int max_bits_heap = praDequeDetail_MaxSizeBitsUpToDeg2InHalfAddressSpace(value_size);//maximal allocatable array is limited by address space
-    const int max_bits_table = small_block_entries_log2 + kPradequeDetailLog2DiffBetweenSmallAndBigBlocks + praDequeDetail_LowerLog2(kPradequeDetailHalfTableBigDupEntries) + 1;//log2 of element count that can be placed in big blocks in table. +1 corresponds to table consisting of two halves.
-	
-	const int max_bits = max_bits_heap < max_bits_table ? max_bits_heap : max_bits_table;
-	const intptr_t max_size = ((intptr_t)1) << max_bits;
-	assert(max_size > 0);//to be sure that any difference fill in intptr_t
-	pradeque_params_t params = {value_size, max_size, {size_aligned_bits, small_block_entries_log2, odd_value_size, odd_mul_to_get_1_mod_max_block}};
-	return params;
-}
-*/
 static inline void* pradeque_allocator_default(size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context)
 {
 	assert(size);
@@ -213,6 +186,131 @@ static inline void pradeque_deallocator_default(void *block, size_t alignment, s
 	assert(!zero_on_allocation || size == (kPradequeDetailHalfTableSize * 2 * sizeof(void*)));
 	assert(context);
 	free(block);
+}
+
+
+static inline pradeque_iterator_t pradeque_begin(const pradeque_t* deque, const pradeque_params_t* params)
+{
+	assert(deque);
+	assert(params);
+	pradeque_iterator_t result = {};
+	/*TODO*/
+	return result;
+}
+static inline pradeque_iterator_t pradeque_end(const pradeque_t* deque, const pradeque_params_t* params)
+{
+	assert(deque);
+	assert(params);
+	pradeque_iterator_t result= {};
+	/*TODO*/
+	return result;
+}
+
+static inline intptr_t pradeque_distance(pradeque_iterator_t first, pradeque_iterator_t last, pradeque_params_t* params)
+{
+	assert((!first.value  && !first.table_entry_id) == (!last.value && !last.table_entry_id));//only both parts togethercan be iterators of empty container
+	assert(params);
+	/*TODO*/
+	return 0;
+}
+
+static inline pradeque_iterator_t pradeque_advance(pradeque_iterator_t iterator_to_advance, intptr_t advance_by, pradeque_params_t* params)
+{
+	assert(iterator_to_advance.value || !advance_by || (iterator_to_advance.table_entry_id && advance_by <0));
+	assert(params);
+	assert((advance_by  >=0 && !(advance_by >> params->max_size_log2)) || (advance_by < 0 && !((-advance_by) >> params->max_size_log2)));//TODO: wrap n function and add to other places
+	pradeque_iterator_t result= {};
+	/*TODO*/
+	return result;
+}
+
+static inline pradeque_contigous_block_iteration_t pradeque_push_front(pradeque_t* deque, intptr_t begin_advance/*always <=0*/, const pradeque_params_t* params, pradeque_allocator_t allocator)
+{
+	assert(deque);
+	assert(params);
+	assert(begin_advance <=0);
+	assert(allocator);
+	pradeque_contigous_block_iteration_t result= {};
+	/*TODO*/
+	return result;
+}
+static inline pradeque_contigous_block_iteration_t pradeque_push_back(pradeque_t* deque, intptr_t end_advance/*always >=0*/, const pradeque_params_t* params, pradeque_allocator_t allocator)
+{
+	assert(deque);
+	assert(params);
+	assert(end_advance >=0);
+	assert(allocator);
+	pradeque_contigous_block_iteration_t result= {};
+	/*TODO*/
+	return result;
+}
+
+static inline pradeque_pop_iteration_t pradeque_pop_front_prepare(const pradeque_t* deque, intptr_t begin_advance/*always >=0*/, const pradeque_params_t* params)
+{
+	assert(deque);
+	assert(params);
+	assert(begin_advance >=0);
+	pradeque_pop_iteration_t result= {};
+	/*TODO*/
+	return result;
+}
+static inline pradeque_pop_iteration_t pradeque_pop_front(pradeque_t* deque, pradeque_pop_iteration_t block_to_pop/*advane always >=0*/, const pradeque_params_t* params, pradeque_deallocator_t deallocator)
+{
+	assert(deque);
+	assert(params);
+	assert(block_to_pop.iteration.advance >=0);
+	assert(deallocator);
+	pradeque_pop_iteration_t result= {};
+	/*TODO*/
+	return result;
+}
+
+static inline  pradeque_pop_iteration_t pradeque_pop_back_prepare(const pradeque_t* deque, intptr_t end_advance/*always <=0*/, const pradeque_params_t* params)
+{
+	assert(deque);
+	assert(params);
+	assert(end_advance <=0);
+	pradeque_pop_iteration_t result= {};
+	/*TODO*/
+	return result;
+}
+
+static inline pradeque_pop_iteration_t pradeque_pop_back(pradeque_t* deque, pradeque_pop_iteration_t block_to_pop/*advane always <=0*/, const pradeque_params_t* params, pradeque_deallocator_t deallocator)
+{
+	assert(deque);
+	assert(params);
+	assert(block_to_pop.iteration.advance <=0);
+	assert(deallocator);
+	pradeque_pop_iteration_t result= {};
+	/*TODO*/
+	return result;
+}
+
+static inline pradeque_contigous_block_iteration_t pradeque_next_contigous_block(pradeque_contigous_block_iteration_t current/*advance always >=0*/, const pradeque_params_t* params)
+{
+	assert(params);
+	assert(current.advance >=0);
+	pradeque_contigous_block_iteration_t result= {};
+	/*TODO*/
+	return result;
+}
+
+static inline pradeque_contigous_block_iteration_t pradeque_prev_contigous_block(pradeque_contigous_block_iteration_t current/*advance always <=0*/, const pradeque_params_t* params)
+{
+	assert(params);
+	assert(current.advance <=0);
+	pradeque_contigous_block_iteration_t result= {};
+	/*TODO*/
+	return result;
+}
+
+static inline void pradeque_clear(pradeque_t* deque, const pradeque_params_t* params, pradeque_deallocator_t deallocator){
+	assert(deque);
+	assert(params);
+	assert(deallocator);
+	assert(params->value_size);
+	assert(params->max_size_log2);
+/*TODO*/
 }
 
 static int kDradequeExplicitUseHelperDetailV1 = sizeof(&pradeque_prev_contigous_block) + sizeof (kDradequeExplicitUseHelperDetailV1);

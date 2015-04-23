@@ -59,8 +59,8 @@ typedef void pradeque_deallocator_t(void *block, size_t alignment, size_t size, 
 static void* pradeque_allocator_default(size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context);
 static void pradeque_deallocator_default(void *block, size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context);
 
-static pradeque_iterator_t pradeque_begin(const pradeque_t* deque, pradeque_params_t* params);
-static pradeque_iterator_t pradeque_end(const pradeque_t* deque, pradeque_params_t* params);
+static pradeque_iterator_t pradeque_begin(const pradeque_t* deque, const pradeque_params_t* params);
+static pradeque_iterator_t pradeque_end(const pradeque_t* deque, const pradeque_params_t* params);
 
 static intptr_t pradeque_distance(pradeque_iterator_t first, pradeque_iterator_t last, pradeque_params_t* params); //can be implemented without iterating all contigous blocks
 static pradeque_iterator_t pradeque_advance(pradeque_iterator_t iterator_to_advance, intptr_t advance_by, pradeque_params_t* params);//can be implemented without iterating all contigous blocks
@@ -68,22 +68,22 @@ static pradeque_iterator_t pradeque_advance(pradeque_iterator_t iterator_to_adva
 //may be distance_fast method can be introduced to get faser distance with known deque object. May be not only distance
 
 //returns pushed contigous block and remaining begin advance
-static pradeque_contigous_block_iteration_t pradeque_push_front(pradeque_t* deque, intptr_t begin_advance/*always <=0*/, pradeque_params_t* params, pradeque_allocator_t allocator);
+static pradeque_contigous_block_iteration_t pradeque_push_front(pradeque_t* deque, intptr_t begin_advance/*always <=0*/, const pradeque_params_t* params, pradeque_allocator_t allocator);
 //returns pushed contigous block and remaining end advance
-static pradeque_contigous_block_iteration_t pradeque_push_back(pradeque_t* deque, intptr_t end_advance/*always >=0*/, pradeque_params_t* params, pradeque_allocator_t allocator);
+static pradeque_contigous_block_iteration_t pradeque_push_back(pradeque_t* deque, intptr_t end_advance/*always >=0*/, const pradeque_params_t* params, pradeque_allocator_t allocator);
 
 //removing requires knowtion of removed elements before theay are erased. So there is one more function called before first pop
-static pradeque_pop_iteration_t pradeque_pop_front_prepare(const pradeque_t* deque, intptr_t begin_advance/*always >=0*/, pradeque_params_t* params);
-static pradeque_pop_iteration_t pradeque_pop_front(pradeque_t* deque, pradeque_pop_iteration_t block_to_pop/*advane always >=0*/, pradeque_params_t* params, pradeque_deallocator_t deallocator);
+static pradeque_pop_iteration_t pradeque_pop_front_prepare(const pradeque_t* deque, intptr_t begin_advance/*always >=0*/, const pradeque_params_t* params);
+static pradeque_pop_iteration_t pradeque_pop_front(pradeque_t* deque, pradeque_pop_iteration_t block_to_pop/*advane always >=0*/, const pradeque_params_t* params, pradeque_deallocator_t deallocator);
 
-static pradeque_pop_iteration_t pradeque_pop_back_prepare(const pradeque_t* deque, intptr_t end_advance/*always <=0*/, pradeque_params_t* params);
-static pradeque_pop_iteration_t pradeque_pop_back(pradeque_t* deque, pradeque_pop_iteration_t block_to_pop/*advane always <=0*/, pradeque_params_t* params, pradeque_deallocator_t deallocator);
+static pradeque_pop_iteration_t pradeque_pop_back_prepare(const pradeque_t* deque, intptr_t end_advance/*always <=0*/, const pradeque_params_t* params);
+static pradeque_pop_iteration_t pradeque_pop_back(pradeque_t* deque, pradeque_pop_iteration_t block_to_pop/*advane always <=0*/, const pradeque_params_t* params, pradeque_deallocator_t deallocator);
 
 //to begin such iteartion a contigous block with zero size corresponding to some iteartor and expected advance must be prepared
-static pradeque_contigous_block_iteration_t pradeque_next_contigous_block(pradeque_contigous_block_iteration_t current/*advance always >=0*/, pradeque_params_t* params);
-static pradeque_contigous_block_iteration_t pradeque_prev_contigous_block(pradeque_contigous_block_iteration_t current/*advance always <=0*/, pradeque_params_t* params);
+static pradeque_contigous_block_iteration_t pradeque_next_contigous_block(pradeque_contigous_block_iteration_t current/*advance always >=0*/, const pradeque_params_t* params);
+static pradeque_contigous_block_iteration_t pradeque_prev_contigous_block(pradeque_contigous_block_iteration_t current/*advance always <=0*/, const pradeque_params_t* params);
 
-static void pradeque_clear(pradeque_t* deque, pradeque_params_t* params, pradeque_deallocator_t deallocator);//releases all allocated memory including caches (table, first block etc)
+static void pradeque_clear(pradeque_t* deque, const pradeque_params_t* params, pradeque_deallocator_t deallocator);//releases all allocated memory including caches (table, first block etc)
 
 //inline implementation is included after all declaration to be sure that they are compilable without it
 #include "pradeque-inl.h"

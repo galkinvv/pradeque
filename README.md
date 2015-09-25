@@ -114,6 +114,8 @@ There would be a bit more address calculations but they expected to be trivial.
 * for allow using in different scenarious the object must be move-assignable(C)/move-constructible(C++). So no internal pointers to main object is allowed.
 * iterating all container non-changed part while container is modified.
 * iterating container while it is not modified. Does not requires stable iterators, so may be implemented a bit more efficiently, for example by using contigous blocks of memory.
+* builtin place to store reference counter/deleter (for std::allocate_shared)
+* support custom allocator
 
 ### External API, "kernel" API
 * C header declaring functions that gets extra argument with structure. Gives possibilyty to integrate into core of other projects.

@@ -57,18 +57,6 @@
 #define PRA_DEQUE_MIN_DETAILV1(x,y) (((x)<(y))?(x):(y))
 #define PRA_DEQUE_MAX_DETAILV1(x,y) (((x)>(y))?(x):(y))
 
-struct pradeque_detailV1
-{
-   struct {
-	   void *first;
-	   uintptr_t first_logical_index_packed_with_flags;
-	   //stores first logical index and differnt flags describing container usage: current addressing mode constants, bidirectional usage presence, ...
-	   //when becomes empty the table pointer is stored instead of first logical index
-
-	   pradeque_iterator_t post_last;
-   } detailV1; //pradeque_t details are not part of API
-};
-
 enum{
 
 kPradequeDetailPointerAlign = PRA_DEQUE_LOWER_LOG2_UINT64_DETAILV1(sizeof(void*)),

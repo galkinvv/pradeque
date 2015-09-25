@@ -27,8 +27,21 @@ typedef struct
 	pradeque_contigous_block_iteration_t iteration;
 }pradeque_pop_iteration_t;//tiny wrapper to protect from misusing generic iteration_t object in pop operations
 
-struct pradeque_detailV1;
-typedef struct pradeque_detailV1 pradeque_t;
+
+typedef struct pradeque_allocator_detailV1
+{
+	typedef void* pradeque_allocator_t(size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context);//aligned memory allocate function
+	typedef void pradeque_deallocator_t(void *block, size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context);//memory deallocate function that is passed all extra parameters used for allocation
+} pradeque_allocator_t;
+
+typedef struct pradeque_detailV1
+{
+   pradeque_iterator_t; begin;
+   pradeque_iterator_t; end;
+   uintptr_t[3] user_data;//can be used as_vfunc_table_including_allocator_and_ref_counts;
+   uintptr_t table_pointer_packed_with_flags;
+   //stores pointer to table packed with differnt flags describing container usage: current addressing mode constants, bidirectional usage presence, ...
+} pradeque_t;
 
 typedef struct
 {
@@ -45,6 +58,8 @@ typedef struct
 pradeque_params_t;
 
 
+
+
 #define PRADEQUE_PREPARED_PARAMS(size_t__value_size) { PRADEQUE_PREPARED_PARAMS_DETAILV1(((size_t)(size_t__value_size))) /*generates comma-separated initializers*/}
 //object instances are always aligned to the greatest power of 2 dividing value_size
 //gets single parameter: value_size of type size_t
@@ -52,9 +67,6 @@ pradeque_params_t;
 //it is absolutely needed fo efficiency, and for constexpr max_size() in c++.
 //The macro implementation is possible but is quite complicated.
 
-
-typedef void* pradeque_allocator_t(size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context);//aligned memory allocate function
-typedef void pradeque_deallocator_t(void *block, size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context);//memory deallocate function that is passed all extra parameters used for allocation
 
 static void* pradeque_allocator_default(size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context);
 static void pradeque_deallocator_default(void *block, size_t alignment, size_t size, int zero_on_allocation, const pradeque_t* context);

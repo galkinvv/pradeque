@@ -17,26 +17,23 @@ Provide a container that would be like a std::vector suitable as "default contai
 ### Ideas to implement
 
 * basic structure: use table with arrays of exponential increasing size.
-* implement infinite-queue-pattern usage by relocating same size arrays from the end of container to the beginng of container
- * relocation can be done iff elements fits in a few arrays of same size
-  * more arrays of same size allows optimized memory usage - no need to allocate entire big array to relocate data that use small portion of it
-  * for optimized memory usage size of next array should be not a lot greater than sum of sizes of all previous arrays
- * relocation of a few arrays can be efficiently done by storing array pointers in circular buffer and rolling it via base pointer
-* optimize iteartor inc/dec operations by requiring that all ends of data blocks correspond to adresses with specific alignment, so most increment operations would just add constant to pointer and checks that such addition does't cross bound
+* implement infinite-queue-pattern usage by changing order of array groups inside container while all data fits in one group
+ * relocation can be done iff elements fits in a one group of arrays
+  * memory usage dependency on the size of arrays must be analyzed
+ * relocation can be done by logically changing the order arrays groups are accessed
+* optimize iteartor add/sub operations by requiring that all ends of data blocks correspond to adresses with specific alignment, so most increment operations would just add constant to pointer and checks that such addition does't cross bound
 * use aligned arrays allocation
- * for known to be small internal arrays retrieve pointer to array from pointer to specific element
+ * for known to be small internal arrays (table with array pointers, first block, maybe second block) retrieve pointer to array from pointer to specific element
  * for big arrays this achieves aligment requirement for bounds 
-* no buffers except first contains associated extra internal data.
- * first buffer is allocated before global table so it does contain reference to that table to make iterators be able to find table.
+* no buffers except first/second contains associated extra internal data.
+ * first buffer is allocated before global table so it does contain technical buffer being deque object itself which references to the table to make iterators be able to find table.
  * buffer boundaries must be aligned so internal data can't be placed inside aligned object - it must be placed near it
- * iterators pointing to first buffer that are created before allocating table has null table pointer and in extra bits may contain information placement
- * data allocated for first block contains: 2 buffers of size 2 ^ N for implementing circular behaviour for case of a few values and techical buffer of size 2 ^ (N-1).
-  * this ensures that for size of techical buffer is 4 times smaller than data buffers, so the memory overhead is't so awful
-  * this is achieved by allocating (2 ^ (N-1)) * 5 sized buffer allocated on 2 ^ (N-1) boundary, selecting 2 ^ N aligned part that is used for data buffer and the rest is used for technical data.
-  * the side that technical data is placed according the buffer is encoded in iterator extra bits.
-* possibly use small-size optimization: for initial elements allocate single array aligned 2 times more than typical block and just store two pointers to begin-end elements in it. This allows even efficient rotating for small queue usage pattern.
- * after expanding to table reuse first of them for pointer to table (other can be null or carry some other useful information).
-* the iterator should contain all information that is required to perform iteration in same block with very rare acesses to table. Example iterator: pointer to element, pointer to table element which lower bits encodes at least lower limit of container size.
+ * iterators pointing to first buffer that are created before allocating table has null table pointer and in standard bits contain information about block number like any other iterator
+ * data allocated for first block contains: 2 buffers of size 2 ^ N for implementing circular behaviour for case of a few values and techical buffer of same size 2 ^ N
+  * if allowed to place internal buffer on both sides of data it may be made relatively smaller but makes entire structure much more complicated. So it is always before
+  * placement of array object inside at the exact start ob block allocated by allocator is made a tart of an external API
+  * this ensures that for size of techical buffer is 2 times smaller than data buffers, so the memory overhead isn't so awful
+* the iterator should contain all information that is required to perform iteration in same block with very rare acesses to table. Example iterator: pointer to element, pointer to table element which lower bits gives current block size & alignement.
 * the object itself should contain all information to perform all front/back related operations that does't require memory alloc/free without acessing the table.
  * so it need to contain begin and end iterators
   * iterators share address part corresponding to table address. This area can be used for other information.
@@ -47,39 +44,39 @@ Provide a container that would be like a std::vector suitable as "default contai
 * operation modes
  * no-table-pointer mode
   * used until the table is firstly allocated
-  * quite effective for small sizes, alllows even small queues
+  * quite effective for small sizes, allows even small queues
   * is memory-effective for small sizes because no table is allocated.
-  * allows initially to use memory optimally for both "puth to one side" and "push to both sides" strategy
-   * facts of bidirectional usage should be collected in a bit during this phase - they would be needed
+  * for empty deque start inserting "front - at the start of first buffer, back - at the end of the second buffer"
+   * allow backward/forward-queue-like usage for small size
+   * allow both-sides deque usage with small size
   * after table is once allocated this mode is never used, because usage strategy shows that table was required and data about bidirectinal usage is collected.
-  * after-end iteartor for no-table-pointer mode must have element address that is different from all present elements. So if it points immediately after block - it must have a special blockid and element pointer pointing immediately after two allocatde blocks
- * plain table adressing
-  * never used for iterators pointing to max blocks, because tey need consult table to check for roundtripping.
-  * used unntil first roundtrip-after queue usage occured
-  * to be able switch from plain adressing to another mode we need to mark entire table as "initially ubused". To do it we pass special "need to zero memory" parameter to allocator. Allocator can implement zeroing without cache polluting.
- * no plain table addressing
-  * many bits are required to store info. So they must be placed into block where adress has not-so much significant bits, but better to place it in the same chache line as first table pointers. 8-th pointer seems a good candidate. Cache way-ness is't got worse here because first table pointers are going to be read anyway.
+  * after-end iteartor for no-table-pointer mode must have element address that is different from all present elements.
+   * it must have a blockid with normal number and zero table pointer - it is a way to identify special after end iterator
+   * it's pointer points to the array itself - it is another way to identify this special after end iterator
+ * forward/backward table adressing
+  * begin/end always contains references to table, even for small first blocks
+  * iterator low 2-bits are used as flags indicating "order when iterator was created"
+   * 2 bits allow to get the newer order given to iterators with consequtive orders
+   * so iterator subtraction never requires table access
+   * note that after-end iterator must be taken at the account too when deciding that new generation with another order can be created.
+   * iterator addition use oppurtunistic approach - calculating table value and tries to dereference it. Low bits of non-zero table enties tell about current order - so order is verified
+    * to be able to make checks all table elements must be initially zeroed. Allocator can implement zeroing without cache polluting.
 * design of distance and advance operations
  * each iterator contains info about block size, so for both diff and advance operations we can say if they involves more than one block
   * if only one block is involved - use simplest arithmetic without any table access.
-  * diff case
-   * if both iteartors are in "no-table-pointer" mode that is used for first block before table allocation calculate diff using block relative position info encoded in two info bits of iterator
-    * each of two blocks has 2-bit integer corresponding to it. Integers differ by one mod 4. The smaller by one precceds the bigger. When block is empt it can be placed on the other side of other by adding 2 mod 4.
-	 * otherwise both iterators are upgraded by reaching table using it reference in ther iterator.
-	* if both iterators has "plain table adressing" bit set difference is calculated with plain table adressing mode
-	* otherwise table is consulted to get current adressing mode and difference is calculated with it.
+  * diff case - table is never consulted
+   * compare "order generations" of two iterators and use the order from later generation
+   * distance is calculated using array position, array number and newest order
   * advance case
-   * if iteartor is in "no-table-pointer" mode, a field-near-first block is consulted.
-    * if table exists iterator is upgraded to current mode.
-	 * otherwise advance is calculated with assumption that requested block exists.
-	* if iterator "plain table adressing" bit set calculate target table position and read it.
-	 * if table position is not filled (initially zeroed, or marked as unused/freed) upgrade to "no plain adressing" mode
-	* for non-plain-addressing table is consulted first time to get current adressing mode and second time to load pointer to allocated block.
-  * so for iterators with table pointer two techincal bits are used:
-   * bit describing if plain adressing mode should be tried
-   * (there was idea to have a bit that can be used to determine if distance should be calculated over zero or ovre max but this can be solved by size limiting and using non-plain for max-size blocks)
+   * if iteartor is in "no-table-pointer" mode, an array object is consulted to get current order.
+	 * current order is loaded
+    * if table exists iterator is upgraded to table mode
+	 * item is loaded without checks, since we know current just-loaded order
+	* make opportunistic read of desired table entry to get new iterator using the order encoded inside iterator
+	 * if table position is not filled (initially zeroed, or marked as unused/freed) or signals another order - look the other order.
+  * so for iterators with table pointer two techincal bits are used for describing order generation
 * memory free strategy
- * it's a bad idea to free block immediately after it become unused because there is high chance it would be used again
+ * it's a bad idea to free block immediately after it become unused because there is high chance it would be used again immediately
  * it's a bad idea to check about freeing blocks too often
   * idea 1: free blocks when next block become unused. Simple but very memoey effective. Neither std::vector is.
   * idea 2: free blocks when end iterator adjusted over next-minimal-block aside of unfreed block
@@ -89,12 +86,12 @@ Provide a container that would be like a std::vector suitable as "default contai
  * fbvector: opt-in to allow copying via memcpy
   * pradeque: doesn't require copy constructor for operations not involving elements in the middle.
  * fbvector: autodetect and use jemalloc
-  * pradeque: optimize performance for jemalloc case; split out allocator api alllowing using non-standard allocator with extra options to free
+  * pradeque: optimize performance for jemalloc case; split out allocator api allowing using non-standard allocator with extra options to free
 * tradeoffs: for first version tradeoffs may be made assuming system with large virtual address space and for which address computations are a lot faster than memory access.
 * tradeoffs: for first version tradeoffs may be made assuming compiler that can optimize out any calculation that has all data available in compile time (inlining with specific parameters).
 * tradeoffs: extra memory vs iteration speed
   * tge bigger block allows faster iteration, the smaller block allows more efficient memory usage
-  * require block size to be minimal for iteration speed be nearly equal to speed for very bif block
+  * require block size to be minimal for iteration speed be nearly equal to speed for very big block
   * be traditional, look how tgis is implemented in existing containers
    * all current deques limiting the size in term of bytes
    * gcc std vector uses 1 as min size.
@@ -128,8 +125,10 @@ There would be a bit more address calculations but they expected to be trivial.
  * "Kernel" must allow efficient implementations of operations on multiple elements, for example by allowing iteration by sequential groups.
   * all provided operations should operate in terms of iterating of contigous mem blocks.
    * the exception are operations that can be more efficiently computed without pre-contigous block iteration used even internally
+ * Allow associating user data with deque object by special allocator allocating a greter buffer and putting user object before deque. It would may be accessed from deque pointer
+  * This may be used by C++ wrapper to store allocator and/or shd::shared_ptr refcounting buffer
 * C++11 header with high stdlib compatibility
-* Ensure headears are warning-free for hhigh warning levels
+* Ensure headears are warning-free for high warning levels
 * common code
  * so C++ version have to be wrapper around C passing const parameters generated from template arguments
 auto-generating wrapping extra parameter

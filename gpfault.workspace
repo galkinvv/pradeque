@@ -1,2 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<CodeLite_Workspace Name="gpfault" Database=""/>
+<CodeLite_Workspace Name="gpfault" Database="">
+  <Project Name="pradeque-codelite" Path="pradeque-codelite.project" Active="Yes"/>
+  <BuildMatrix>
+    <WorkspaceConfiguration Name="Release" Selected="yes">
+      <Project Name="pradeue" ConfigName="Release"/>
+      <Project Name="pradeque-codelite" ConfigName="Release"/>
+    </WorkspaceConfiguration>
+  </BuildMatrix>
+</CodeLite_Workspace>

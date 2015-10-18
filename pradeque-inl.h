@@ -138,7 +138,10 @@ inline int praDequeDetail_MaxSizeBitsUpToDeg2InHalfAddressSpace(size_t value_siz
 
 
 //API implementation - functions are static inline to workaround conflicts of different versions
-#define PRADEQUE_PREPARED_PARAMS_DETAILV1(size_t__value_size) \
+
+#define PRADEQUE_DETAILV1_ALIGNED_STORAGE(value_type, local_items_count) double double_aligner; //TODO: use max+aligned_t and coparison with precalculated max size
+
+#define PRADEQUE_DETAILV1_PREPARED_PARAMS(size_t__value_size) \
 /*size_t value_size*/ size_t__value_size, \
 /*int max_size_log2=  min(max allocatable array for upper log2 of value size, max adressable by table array for value alignment)*/ PRA_DEQUE_MIN_DETAILV1( \
 	kPradequeDetailLog2MaxContigousArraysForValueSize1 - (size_t__value_size ==1 ? 0 : (PRA_DEQUE_LOWER_LOG2_UINT64_DETAILV1(size_t__value_size -1)+1)), \

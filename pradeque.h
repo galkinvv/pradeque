@@ -47,7 +47,12 @@ typedef struct
 }
 pradeque_params_t;
 
-#define PRADEQUE_PREPARED_PARAMS(size_t__value_size) { PRADEQUE_PREPARED_PARAMS_DETAILV1(((size_t)(size_t__value_size))) /*generates comma-separated initializers*/}
+#define PRADEQUE_ALIGNED_UNION_WITH_LOCALITEMS(value_type, local_items_count) union {pradeque_t head; PRADEQUE_DETAILV1_ALIGNED_STORAGE(value_type, (local_items_count))}
+#define PRADEQUE_ALIGNED_UNION(value_type) union {pradeque_t head; PRADEQUE_DETAILV1_ALIGNED_STORAGE(value_type, (PRADEQUE_DETAILV1_DEFAULT_LOCALITEMS(sizeof(value_type)))}
+ //initializer that can be used to fill head of inctsnce? from pointers to instance storage
+ #define PRADEQUE_INITIALIZER(instance) {} //TODO //#define PRADEQUE_INITIALIZER(instance) {{&instanc+X, 0}, {&instanc+X, 1}}
+
+#define PRADEQUE_PREPARED_PARAMS(size_t__value_size) { PRADEQUE_DETAILV1_PREPARED_PARAMS(((size_t)(size_t__value_size))) /*generates comma-separated initializers*/}
 //object instances are always aligned to the greatest power of 2 dividing value_size
 //gets single parameter: value_size of type size_t
 //this must be done in compile time.

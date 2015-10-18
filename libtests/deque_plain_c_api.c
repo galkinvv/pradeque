@@ -12,6 +12,7 @@ const pradeque_params_t size7_deque_params = PRADEQUE_PREPARED_PARAMS(sizeof(cha
 const pradeque_params_t size257_deque_params = PRADEQUE_PREPARED_PARAMS(sizeof(char[257]));
 const pradeque_params_t size100000000_deque_params = PRADEQUE_PREPARED_PARAMS(sizeof(char[100000000]));
 
+PRADEQUE_ALIGNED_UNION_WITH_LOCALITEMS(int, 8) gPradeque = PRADEQUE_INITIALIZER(gPradeque);
 
 int count_errors_in_pradeque_plain_c_api()
 {
